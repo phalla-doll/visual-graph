@@ -14,7 +14,9 @@ export function Sidebar() {
     return (
         <Tabs
             value={state.sidebarTab}
-            onValueChange={(value) => actions.setSidebarTab(value as SidebarTab)}
+            onValueChange={(value) =>
+                actions.setSidebarTab(value as SidebarTab)
+            }
             className="h-full"
         >
             <div className="p-2">

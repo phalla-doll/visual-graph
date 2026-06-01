@@ -158,13 +158,14 @@ export const useGraphStore = create<GraphStore>()(
                         },
                     }))
                 try {
-                    const incoming = collectIncoming(entity, get().entities).map(
-                        (r) => ({
-                            fromName: r.fromEntity.name,
-                            name: r.name,
-                            cardinality: r.cardinality,
-                        })
-                    )
+                    const incoming = collectIncoming(
+                        entity,
+                        get().entities
+                    ).map((r) => ({
+                        fromName: r.fromEntity.name,
+                        name: r.name,
+                        cardinality: r.cardinality,
+                    }))
                     const res = await fetch("/api/summarize", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -176,7 +177,8 @@ export const useGraphStore = create<GraphStore>()(
                     } | null
                     if (!res.ok) {
                         setError(
-                            data?.error ?? `Request failed (HTTP ${res.status}).`
+                            data?.error ??
+                                `Request failed (HTTP ${res.status}).`
                         )
                         return
                     }
@@ -195,7 +197,9 @@ export const useGraphStore = create<GraphStore>()(
                         },
                     }))
                 } catch (err) {
-                    setError(err instanceof Error ? err.message : "Request failed.")
+                    setError(
+                        err instanceof Error ? err.message : "Request failed."
+                    )
                 }
             },
 

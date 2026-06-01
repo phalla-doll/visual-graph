@@ -55,7 +55,9 @@ export function XmlEditor() {
                     spellCheck={false}
                 />
                 {state.parseError && (
-                    <p className="text-sm text-destructive">{state.parseError}</p>
+                    <p className="text-sm text-destructive">
+                        {state.parseError}
+                    </p>
                 )}
                 <input
                     ref={fileInputRef}

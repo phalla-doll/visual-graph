@@ -37,7 +37,12 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
     const { setCenter, getNode } = useReactFlow()
 
     const { nodes, edges } = useMemo(
-        () => layoutGraph(state.graph.nodes, state.graph.edges, state.layoutDirection),
+        () =>
+            layoutGraph(
+                state.graph.nodes,
+                state.graph.edges,
+                state.layoutDirection
+            ),
         [state.graph, state.layoutDirection]
     )
 

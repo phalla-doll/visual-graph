@@ -20,9 +20,7 @@ const InspectorContext = createContext<InspectorContextValue | null>(null)
 export function useInspector(): InspectorContextValue {
     const ctx = use(InspectorContext)
     if (!ctx)
-        throw new Error(
-            "Inspector subcomponent used outside <EntityInspector>"
-        )
+        throw new Error("Inspector subcomponent used outside <EntityInspector>")
     return ctx
 }
 
@@ -31,7 +29,10 @@ interface InspectorProviderProps {
     children: ReactNode
 }
 
-export function InspectorProvider({ entity, children }: InspectorProviderProps) {
+export function InspectorProvider({
+    entity,
+    children,
+}: InspectorProviderProps) {
     const { state } = useGraphContext()
     const byShortName = useMemo(
         () => new Map(state.entities.map((e) => [e.name, e] as const)),
