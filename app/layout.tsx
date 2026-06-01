@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Geist_Mono, Lora, DM_Sans } from "next/font/google"
+import { Google_Sans_Code, Lora, DM_Sans } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -37,7 +37,7 @@ const loraHeading = Lora({ subsets: ["latin"], variable: "--font-heading" })
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" })
 
-const fontMono = Geist_Mono({
+const fontMono = Google_Sans_Code({
     subsets: ["latin"],
     variable: "--font-mono",
 })
