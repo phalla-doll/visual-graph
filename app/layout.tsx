@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next"
 import { Geist_Mono, Lora, DM_Sans } from "next/font/google"
 
 import "./globals.css"
@@ -5,6 +6,32 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { GraphProvider } from "@/store/graph-provider"
+
+export const metadata: Metadata = {
+    title: {
+        default: "XML Visual Graph",
+        template: "%s — XML Visual Graph",
+    },
+    description:
+        "Visualize XML, EDMX, XSD, and OData schemas as interactive entity-relationship graphs — entirely in the browser.",
+    applicationName: "XML Visual Graph",
+    keywords: [
+        "XML",
+        "EDMX",
+        "XSD",
+        "OData",
+        "schema visualization",
+        "entity relationship",
+        "graph",
+    ],
+}
+
+export const viewport: Viewport = {
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+        { media: "(prefers-color-scheme: dark)", color: "#1a1a17" },
+    ],
+}
 
 const loraHeading = Lora({ subsets: ["latin"], variable: "--font-heading" })
 
