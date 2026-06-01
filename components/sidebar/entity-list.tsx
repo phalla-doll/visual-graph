@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { useGraphContext } from "@/store/graph-context"
 
 export function EntityList() {
-    const { state, actions } = useGraphContext()
+    const { state, actions, meta } = useGraphContext()
 
     const filtered = useMemo(() => {
         const sorted = [...state.entities].sort((a, b) =>
@@ -39,7 +39,10 @@ export function EntityList() {
                         <li key={entity.id}>
                             <button
                                 type="button"
-                                onClick={() => actions.select(entity.id)}
+                                onClick={() => {
+                                    actions.select(entity.id)
+                                    meta.panToNode?.(entity.id)
+                                }}
                                 className={cn(
                                     "flex w-full flex-col items-start gap-0.5 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted",
                                     isSelected &&
