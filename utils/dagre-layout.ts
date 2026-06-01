@@ -29,6 +29,7 @@ export type EntityNodeData = {
 
 export type RelationshipEdgeData = {
     cardinality: "one" | "many"
+    labelOffset?: number
 }
 
 export type LayoutedGraph = {
@@ -110,7 +111,10 @@ export function layoutGraph(
             source: edge.source,
             target: edge.target,
             label: edge.label,
-            data: { cardinality: edge.cardinality },
+            data: {
+                cardinality: edge.cardinality,
+                labelOffset: edge.labelOffset,
+            },
         })
     )
 

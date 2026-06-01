@@ -38,5 +38,32 @@ export function buildGraph(entities: Entity[]): ParsedGraph {
         }
     }
 
+    assignLabelOffsets(edges)
+
     return { nodes, edges }
+}
+
+const PAIR_LABEL_SPACING = 16
+
+function assignLabelOffsets(edges: GraphEdge[]) {
+    const groups = new Map<string, GraphEdge[]>()
+    for (const edge of edges) {
+        const [a, b] =
+            edge.source < edge.target
+                ? [edge.source, edge.target]
+                : [edge.target, edge.source]
+        const key = `${a}|${b}`
+        const list = groups.get(key)
+        if (list) list.push(edge)
+        else groups.set(key, [edge])
+    }
+
+    for (const list of groups.values()) {
+        if (list.length < 2) continue
+        list.sort((a, b) => a.id.localeCompare(b.id))
+        const center = (list.length - 1) / 2
+        list.forEach((edge, i) => {
+            edge.labelOffset = (i - center) * PAIR_LABEL_SPACING * 2
+        })
+    }
 }

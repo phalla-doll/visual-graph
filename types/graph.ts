@@ -12,6 +12,7 @@ export interface GraphEdge {
     target: string
     label: string
     cardinality: Cardinality
+    labelOffset?: number
 }
 
 export interface ParsedGraph {

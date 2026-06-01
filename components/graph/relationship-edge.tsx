@@ -10,7 +10,7 @@ import {
 import type { Cardinality } from "@/types/entity"
 
 export type RelationshipEdgeProps = EdgeProps & {
-    data?: { cardinality: Cardinality }
+    data?: { cardinality: Cardinality; labelOffset?: number }
 }
 
 export function RelationshipEdge({
@@ -25,7 +25,7 @@ export function RelationshipEdge({
     data,
     style,
 }: RelationshipEdgeProps) {
-    const [path, labelX, labelY] = getSmoothStepPath({
+    const [path, midX, midY] = getSmoothStepPath({
         sourceX,
         sourceY,
         targetX,
@@ -34,6 +34,10 @@ export function RelationshipEdge({
         targetPosition,
         borderRadius: 12,
     })
+
+    const offset = data?.labelOffset ?? 0
+    const labelX = midX
+    const labelY = midY + offset
 
     const cardinality = data?.cardinality ?? "one"
     const markerEnd =
