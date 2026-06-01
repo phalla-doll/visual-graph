@@ -12,6 +12,14 @@ import { toMermaidER } from "@/utils/mermaid"
 
 const EMPTY_GRAPH: ParsedGraph = { nodes: [], edges: [] }
 
+// Held outside the store because AbortController isn't serializable and the
+// in-flight request only matters for the current session.
+let inflightSummary: { id: string; controller: AbortController } | null = null
+
+function isAbort(err: unknown): boolean {
+    return err instanceof DOMException && err.name === "AbortError"
+}
+
 export type LayoutDirection = "LR" | "TB"
 export type SidebarTab = "entities" | "details"
 
@@ -168,10 +176,24 @@ export const useGraphStore = create<GraphStore>()(
             },
 
             select: (id) =>
-                set((state) => ({
-                    selectedEntityId: id,
-                    sidebarTab: id ? "details" : state.sidebarTab,
-                })),
+                set((state) => {
+                    let summaryStatus = state.summaryStatus
+                    if (inflightSummary && inflightSummary.id !== id) {
+                        const cancelledId = inflightSummary.id
+                        inflightSummary.controller.abort()
+                        inflightSummary = null
+                        if (summaryStatus[cancelledId]?.state === "loading") {
+                            const next = { ...summaryStatus }
+                            delete next[cancelledId]
+                            summaryStatus = next
+                        }
+                    }
+                    return {
+                        selectedEntityId: id,
+                        sidebarTab: id ? "details" : state.sidebarTab,
+                        summaryStatus,
+                    }
+                }),
 
             setSearch: (q) => set({ search: q }),
 
@@ -191,6 +213,11 @@ export const useGraphStore = create<GraphStore>()(
 
             requestSummary: async (entity) => {
                 const id = entity.id
+                if (inflightSummary && inflightSummary.id !== id) {
+                    inflightSummary.controller.abort()
+                }
+                const controller = new AbortController()
+                inflightSummary = { id, controller }
                 set((state) => ({
                     summaryStatus: {
                         ...state.summaryStatus,
@@ -217,11 +244,13 @@ export const useGraphStore = create<GraphStore>()(
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ entity, incoming }),
+                        signal: controller.signal,
                     })
                     const data = (await res.json().catch(() => null)) as {
                         summary?: string
                         error?: string
                     } | null
+                    if (controller.signal.aborted) return
                     if (!res.ok) {
                         setError(
                             data?.error ??
@@ -244,9 +273,14 @@ export const useGraphStore = create<GraphStore>()(
                         },
                     }))
                 } catch (err) {
+                    if (isAbort(err) || controller.signal.aborted) return
                     setError(
                         err instanceof Error ? err.message : "Request failed."
                     )
+                } finally {
+                    if (inflightSummary?.controller === controller) {
+                        inflightSummary = null
+                    }
                 }
             },
 
