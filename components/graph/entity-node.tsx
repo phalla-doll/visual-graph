@@ -93,7 +93,7 @@ function EntityNodeImpl({ id, data }: EntityNodeProps) {
                                 </span>
                             </div>
                             <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                                {p.type}
+                                {p.type.replace(/^Edm\./, "")}
                                 {p.nullable ? "?" : ""}
                             </span>
                         </div>

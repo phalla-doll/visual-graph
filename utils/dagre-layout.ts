@@ -49,7 +49,10 @@ function estimateNodeWidth(node: GraphNode): number {
     let rowW = 0
     for (const p of node.properties) {
         const left = (p.isKey ? PK_BADGE : 0) + p.name.length * CHAR_W_NAME
-        const typeText = p.nullable ? p.type.length + 1 : p.type.length
+        const displayedType = p.type.replace(/^Edm\./, "")
+        const typeText = p.nullable
+            ? displayedType.length + 1
+            : displayedType.length
         const right = typeText * CHAR_W_TYPE
         const total = PADDING_X + left + ROW_GAP + right
         if (total > rowW) rowW = total
