@@ -19,6 +19,7 @@ import {
   RelationshipEdge,
   RelationshipMarkers,
 } from "@/components/graph/relationship-edge";
+import { Toolbar } from "@/components/toolbar/toolbar";
 import { useGraphStore } from "@/store/graph-store";
 import { layoutGraph } from "@/utils/dagre-layout";
 
@@ -58,21 +59,26 @@ function CanvasInner() {
   }
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges as ReactFlowEdge[]}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      onNodeClick={onNodeClick}
-      onPaneClick={onPaneClick}
-      fitView
-      proOptions={{ hideAttribution: true }}
-    >
-      <Background gap={20} />
-      <Controls />
-      <MiniMap pannable zoomable />
-      <RelationshipMarkers />
-    </ReactFlow>
+    <div className="flex h-full flex-col">
+      <Toolbar />
+      <div className="min-h-0 flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges as ReactFlowEdge[]}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          fitView
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={20} />
+          <Controls />
+          <MiniMap pannable zoomable />
+          <RelationshipMarkers />
+        </ReactFlow>
+      </div>
+    </div>
   );
 }
 
