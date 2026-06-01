@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
 
+import { AISummary } from "@/components/sidebar/ai-summary";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -58,6 +59,10 @@ export function EntityInspector() {
             <p className="font-mono text-[10px] text-muted-foreground">{selected.namespace}</p>
           )}
         </div>
+
+        <AISummary entity={selected} />
+
+        <Separator />
 
         <section>
           <h3 className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
