@@ -95,25 +95,20 @@ function Summary() {
 
 function Properties() {
     const { entity } = useInspector()
-    if (entity.properties.length === 0) {
-        return (
-            <section>
-                <h3 className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Properties
-                </h3>
+    const count = entity.properties.length
+    return (
+        <section>
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Properties
+                <Badge variant="outline">{count}</Badge>
+            </h3>
+            {count === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
                     No properties.
                 </p>
-            </section>
-        )
-    }
-    return (
-        <section>
-            <h3 className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Properties
-            </h3>
-            <div className="divide-y overflow-hidden rounded-md border text-xs">
-                {entity.properties.map((p) => (
+            ) : (
+                <div className="divide-y overflow-hidden rounded-md border text-xs">
+                    {entity.properties.map((p) => (
                     <div
                         key={p.name}
                         className="flex items-center gap-2 px-2.5 py-1.5"
@@ -145,8 +140,9 @@ function Properties() {
                             {p.nullable ? "?" : ""}
                         </span>
                     </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </section>
     )
 }
@@ -154,6 +150,7 @@ function Properties() {
 function Outgoing() {
     const { entity, byShortName } = useInspector()
     const { actions, meta } = useGraphContext()
+    const count = entity.relationships.length
 
     function go(id: string) {
         actions.select(id)
@@ -162,11 +159,12 @@ function Outgoing() {
 
     return (
         <section>
-            <h3 className="mb-1.5 flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" />{" "}
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" />
                 Outgoing
+                <Badge variant="outline">{count}</Badge>
             </h3>
-            {entity.relationships.length === 0 ? (
+            {count === 0 ? (
                 <p className="text-xs text-muted-foreground italic">None.</p>
             ) : (
                 <ul className="flex flex-col gap-1">
@@ -205,6 +203,7 @@ function Outgoing() {
 function Incoming() {
     const { incoming } = useInspector()
     const { actions, meta } = useGraphContext()
+    const count = incoming.length
 
     function go(id: string) {
         actions.select(id)
@@ -213,11 +212,12 @@ function Incoming() {
 
     return (
         <section>
-            <h3 className="mb-1.5 flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <HugeiconsIcon icon={ArrowLeftRightIcon} className="size-3" />{" "}
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                <HugeiconsIcon icon={ArrowLeftRightIcon} className="size-3" />
                 Incoming
+                <Badge variant="outline">{count}</Badge>
             </h3>
-            {incoming.length === 0 ? (
+            {count === 0 ? (
                 <p className="text-xs text-muted-foreground italic">None.</p>
             ) : (
                 <ul className="flex flex-col gap-1">
