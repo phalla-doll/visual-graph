@@ -27,7 +27,7 @@ export function AISummary({ entity }: AISummaryProps) {
                 </h3>
                 <Button
                     size="xs"
-                    variant={summary ? "ghost" : "secondary"}
+                    variant={summary ? "ghost" : "default"}
                     onClick={() => actions.requestSummary(entity)}
                     disabled={isLoading}
                 >
