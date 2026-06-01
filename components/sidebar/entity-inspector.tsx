@@ -263,6 +263,7 @@ export function EntityInspector() {
                     <EntityInspector.Properties />
                     <Separator />
                     <EntityInspector.Outgoing />
+                    <Separator />
                     <EntityInspector.Incoming />
                 </div>
             </ScrollArea>
