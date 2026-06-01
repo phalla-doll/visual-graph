@@ -7,14 +7,19 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { GraphProvider } from "@/store/graph-provider"
 
+const SITE_URL = "https://xml.manthaa.dev"
+const SITE_NAME = "XML Visual Graph"
+const SITE_DESCRIPTION =
+    "Visualize XML, EDMX, XSD, and OData schemas as interactive entity-relationship graphs — entirely in the browser."
+
 export const metadata: Metadata = {
+    metadataBase: new URL(SITE_URL),
     title: {
-        default: "XML Visual Graph",
-        template: "%s — XML Visual Graph",
+        default: SITE_NAME,
+        template: `%s — ${SITE_NAME}`,
     },
-    description:
-        "Visualize XML, EDMX, XSD, and OData schemas as interactive entity-relationship graphs — entirely in the browser.",
-    applicationName: "XML Visual Graph",
+    description: SITE_DESCRIPTION,
+    applicationName: SITE_NAME,
     keywords: [
         "XML",
         "EDMX",
@@ -24,6 +29,19 @@ export const metadata: Metadata = {
         "entity relationship",
         "graph",
     ],
+    alternates: { canonical: "/" },
+    openGraph: {
+        type: "website",
+        url: SITE_URL,
+        siteName: SITE_NAME,
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+    },
+    twitter: {
+        card: "summary",
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+    },
 }
 
 export const viewport: Viewport = {

@@ -2,6 +2,8 @@
 
 Transform EDMX / OData $metadata into an interactive entity-relationship graph in the browser.
 
+**Live:** <https://xml.manthaa.dev>
+
 ---
 
 ## Overview
