@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, type RefObject } from "react"
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    type RefObject,
+} from "react"
 import {
     Background,
     Controls,
@@ -38,8 +44,9 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
     const { setCenter, getNode } = useReactFlow()
     const { resolvedTheme } = useTheme()
     const colorMode = resolvedTheme === "dark" ? "dark" : "light"
+    const [isDragging, setIsDragging] = useState(false)
 
-    const { nodes, edges } = useMemo(
+    const laidOut = useMemo(
         () =>
             layoutGraph(
                 state.graph.nodes,
@@ -48,6 +55,26 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
             ),
         [state.graph, state.layoutDirection]
     )
+
+    const nodes = useMemo(() => {
+        const z = state.nodeZ
+        const pos = state.nodePositions
+        const hasZ = Object.keys(z).length > 0
+        const hasPos = Object.keys(pos).length > 0
+        if (!hasZ && !hasPos) return laidOut.nodes
+        return laidOut.nodes.map((n) => {
+            const override = pos[n.id]
+            const zIndex = z[n.id]
+            if (!override && zIndex === undefined) return n
+            return {
+                ...n,
+                ...(override ? { position: override } : {}),
+                ...(zIndex !== undefined ? { zIndex } : {}),
+            }
+        })
+    }, [laidOut.nodes, state.nodeZ, state.nodePositions])
+
+    const edges = laidOut.edges
 
     const panToNode = useCallback(
         (id: string) => {
@@ -73,8 +100,22 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
     }, [panRef, panToNode])
 
     function onNodeClick(_: React.MouseEvent, node: ReactFlowNode) {
+        actions.raiseNode(node.id)
         actions.select(node.id)
         panToNode(node.id)
+    }
+
+    function onNodeDragStart(_: React.MouseEvent, node: ReactFlowNode) {
+        setIsDragging(true)
+        actions.raiseNode(node.id)
+    }
+
+    function onNodeDragStop(_: React.MouseEvent, node: ReactFlowNode) {
+        setIsDragging(false)
+        actions.setNodePosition(node.id, {
+            x: node.position.x,
+            y: node.position.y,
+        })
     }
 
     function onPaneClick() {
@@ -91,6 +132,8 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
                     onNodeClick={onNodeClick}
+                    onNodeDragStart={onNodeDragStart}
+                    onNodeDragStop={onNodeDragStop}
                     onPaneClick={onPaneClick}
                     fitView
                     colorMode={colorMode}
@@ -98,7 +141,7 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
                 >
                     <Background gap={20} />
                     <Controls />
-                    <MiniMap pannable zoomable />
+                    {!isDragging && <MiniMap pannable zoomable />}
                     <RelationshipMarkers />
                 </ReactFlow>
             </div>

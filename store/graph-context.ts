@@ -23,6 +23,9 @@ export interface GraphState {
     sidebarTab: SidebarTab
     summaries: Record<string, string>
     summaryStatus: Record<string, SummaryStatus>
+    collapsedNodes: Record<string, boolean>
+    nodeZ: Record<string, number>
+    nodePositions: Record<string, { x: number; y: number }>
 }
 
 export interface GraphActions {
@@ -35,6 +38,10 @@ export interface GraphActions {
     setLayoutDirection(direction: LayoutDirection): void
     setSidebarTab(tab: SidebarTab): void
     requestSummary(entity: Entity): Promise<void>
+    toggleCollapsed(id: string): void
+    raiseNode(id: string): void
+    setNodePosition(id: string, position: { x: number; y: number }): void
+    clearNodePositions(): void
     exportMermaid(): string
     exportJson(): string
     reset(): void

@@ -66,6 +66,9 @@ export function GraphProvider({
             sidebarTab: s.sidebarTab,
             summaries: s.summaries,
             summaryStatus: s.summaryStatus,
+            collapsedNodes: s.collapsedNodes,
+            nodeZ: s.nodeZ,
+            nodePositions: s.nodePositions,
         }))
     )
 
@@ -80,6 +83,10 @@ export function GraphProvider({
             setLayoutDirection: s.setLayoutDirection,
             setSidebarTab: s.setSidebarTab,
             requestSummary: s.requestSummary,
+            toggleCollapsed: s.toggleCollapsed,
+            raiseNode: s.raiseNode,
+            setNodePosition: s.setNodePosition,
+            clearNodePositions: s.clearNodePositions,
             exportMermaid: s.exportMermaid,
             exportJson: s.exportJson,
             reset: s.reset,

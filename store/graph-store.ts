@@ -27,6 +27,10 @@ export interface GraphStore {
     sidebarTab: SidebarTab
     summaries: Record<string, string>
     summaryStatus: Record<string, SummaryStatus>
+    collapsedNodes: Record<string, boolean>
+    nodeZ: Record<string, number>
+    topZ: number
+    nodePositions: Record<string, { x: number; y: number }>
 
     setXml: (xml: string) => void
     parse: () => void
@@ -38,6 +42,10 @@ export interface GraphStore {
     setSidebarTab: (tab: SidebarTab) => void
     setSummary: (id: string, summary: string) => void
     requestSummary: (entity: Entity) => Promise<void>
+    toggleCollapsed: (id: string) => void
+    raiseNode: (id: string) => void
+    setNodePosition: (id: string, position: { x: number; y: number }) => void
+    clearNodePositions: () => void
     exportMermaid: () => string
     exportJson: () => string
     reset: () => void
@@ -75,6 +83,10 @@ export const useGraphStore = create<GraphStore>()(
             sidebarTab: "entities",
             summaries: {},
             summaryStatus: {},
+            collapsedNodes: {},
+            nodeZ: {},
+            topZ: 0,
+            nodePositions: {},
 
             setXml: (xml) => set({ xml }),
 
@@ -238,6 +250,33 @@ export const useGraphStore = create<GraphStore>()(
                 }
             },
 
+            toggleCollapsed: (id) =>
+                set((state) => {
+                    const next = { ...state.collapsedNodes }
+                    if (next[id]) delete next[id]
+                    else next[id] = true
+                    return { collapsedNodes: next }
+                }),
+
+            raiseNode: (id) =>
+                set((state) => {
+                    const nextZ = state.topZ + 1
+                    return {
+                        nodeZ: { ...state.nodeZ, [id]: nextZ },
+                        topZ: nextZ,
+                    }
+                }),
+
+            setNodePosition: (id, position) =>
+                set((state) => ({
+                    nodePositions: {
+                        ...state.nodePositions,
+                        [id]: position,
+                    },
+                })),
+
+            clearNodePositions: () => set({ nodePositions: {} }),
+
             exportMermaid: () => {
                 const { graph, entities } = get()
                 return toMermaidER(graph, entities)
@@ -257,11 +296,15 @@ export const useGraphStore = create<GraphStore>()(
                     sidebarTab: "entities",
                     summaries: {},
                     summaryStatus: {},
+                    collapsedNodes: {},
+                    nodeZ: {},
+                    topZ: 0,
+                    nodePositions: {},
                 }),
         }),
         {
             name: "visual-graph",
-            version: 2,
+            version: 4,
             storage: createJSONStorage(() =>
                 typeof window === "undefined"
                     ? (undefined as unknown as Storage)
@@ -273,23 +316,47 @@ export const useGraphStore = create<GraphStore>()(
                 layoutDirection: state.layoutDirection,
                 sidebarTab: state.sidebarTab,
                 summaries: state.summaries,
+                collapsedNodes: state.collapsedNodes,
+                nodeZ: state.nodeZ,
+                topZ: state.topZ,
+                nodePositions: state.nodePositions,
             }),
             migrate: (persisted, version) => {
+                const p = (persisted ?? {}) as {
+                    xml?: string
+                    selectedEntityId?: string | null
+                    layoutDirection?: LayoutDirection
+                    sidebarTab?: SidebarTab
+                    summaries?: Record<string, string>
+                    collapsedNodes?: Record<string, boolean>
+                    nodeZ?: Record<string, number>
+                    topZ?: number
+                    nodePositions?: Record<string, { x: number; y: number }>
+                }
                 if (version < 2) {
-                    const p = (persisted ?? {}) as {
-                        xml?: string
-                        selectedEntityId?: string | null
-                        layoutDirection?: LayoutDirection
-                        sidebarTab?: SidebarTab
-                        summaries?: Record<string, string>
-                    }
                     return {
                         xml: p.xml ?? "",
                         selectedEntityId: p.selectedEntityId ?? null,
                         layoutDirection: p.layoutDirection ?? "LR",
                         sidebarTab: p.sidebarTab ?? "entities",
                         summaries: p.summaries ?? {},
+                        collapsedNodes: {},
+                        nodeZ: {},
+                        topZ: 0,
+                        nodePositions: {},
                     }
+                }
+                if (version < 3) {
+                    return {
+                        ...p,
+                        collapsedNodes: {},
+                        nodeZ: {},
+                        topZ: 0,
+                        nodePositions: {},
+                    }
+                }
+                if (version < 4) {
+                    return { ...p, nodePositions: {} }
                 }
                 return persisted
             },
