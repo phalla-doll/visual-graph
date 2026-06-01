@@ -1,19 +1,41 @@
-import { Button } from "@/components/ui/button"
+"use client";
+
+import { XmlEditor } from "@/components/editor/xml-editor";
+import { GraphCanvas } from "@/components/graph/graph-canvas";
+import { Sidebar } from "@/components/sidebar/sidebar";
+import { useGraphStore } from "@/store/graph-store";
 
 export default function Page() {
+  const hasGraph = useGraphStore((s) => s.entities.length > 0);
+  const entityCount = useGraphStore((s) => s.entities.length);
+  const edgeCount = useGraphStore((s) => s.graph.edges.length);
+
+  if (!hasGraph) {
+    return (
+      <main className="flex min-h-svh items-center justify-center p-6">
+        <XmlEditor />
+      </main>
+    );
+  }
+
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
+    <main className="flex h-svh flex-col">
+      <header className="flex items-center justify-between border-b px-4 py-2">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-heading text-base font-medium">XML Visual Graph</h1>
+          <span className="text-xs text-muted-foreground">
+            {entityCount} entities · {edgeCount} relationships
+          </span>
         </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
+      </header>
+      <div className="flex min-h-0 flex-1">
+        <aside className="flex w-72 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+          <Sidebar />
+        </aside>
+        <div className="min-w-0 flex-1">
+          <GraphCanvas />
         </div>
       </div>
-    </div>
-  )
+    </main>
+  );
 }
