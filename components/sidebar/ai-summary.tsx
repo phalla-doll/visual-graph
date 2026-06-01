@@ -1,7 +1,7 @@
 "use client"
 
 import { HugeiconsIcon } from "@hugeicons/react"
-import { SparklesIcon } from "@hugeicons/core-free-icons"
+import { Loading03Icon, SparklesIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { useGraphContext } from "@/store/graph-context"
@@ -31,11 +31,19 @@ export function AISummary({ entity }: AISummaryProps) {
                     onClick={() => actions.requestSummary(entity)}
                     disabled={isLoading}
                 >
-                    {isLoading
-                        ? "Generating…"
-                        : summary
-                          ? "Regenerate"
-                          : "Summarize"}
+                    {isLoading ? (
+                        <>
+                            <HugeiconsIcon
+                                icon={Loading03Icon}
+                                className="animate-spin"
+                            />
+                            Generating…
+                        </>
+                    ) : summary ? (
+                        "Regenerate"
+                    ) : (
+                        "Summarize"
+                    )}
                 </Button>
             </div>
             {summary && (
