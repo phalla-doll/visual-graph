@@ -4,31 +4,28 @@ import { useMemo } from "react"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { useGraphStore } from "@/store/graph-store"
+import { useGraphContext } from "@/store/graph-context"
 
 export function EntityList() {
-    const entities = useGraphStore((s) => s.entities)
-    const search = useGraphStore((s) => s.search)
-    const selectedEntityId = useGraphStore((s) => s.selectedEntityId)
-    const select = useGraphStore((s) => s.select)
+    const { state, actions } = useGraphContext()
 
     const filtered = useMemo(() => {
-        const sorted = [...entities].sort((a, b) =>
+        const sorted = [...state.entities].sort((a, b) =>
             a.name.localeCompare(b.name)
         )
-        const q = search.trim().toLowerCase()
+        const q = state.search.trim().toLowerCase()
         if (!q) return sorted
         return sorted.filter(
             (e) =>
                 e.name.toLowerCase().includes(q) ||
                 e.id.toLowerCase().includes(q)
         )
-    }, [entities, search])
+    }, [state.entities, state.search])
 
     if (filtered.length === 0) {
         return (
             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                {search.trim() ? "No matches." : "No entities."}
+                {state.search.trim() ? "No matches." : "No entities."}
             </div>
         )
     }
@@ -37,12 +34,12 @@ export function EntityList() {
         <ScrollArea className="h-full">
             <ul className="flex flex-col gap-0.5 p-2">
                 {filtered.map((entity) => {
-                    const isSelected = entity.id === selectedEntityId
+                    const isSelected = entity.id === state.selectedEntityId
                     return (
                         <li key={entity.id}>
                             <button
                                 type="button"
-                                onClick={() => select(entity.id)}
+                                onClick={() => actions.select(entity.id)}
                                 className={cn(
                                     "flex w-full flex-col items-start gap-0.5 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted",
                                     isSelected &&

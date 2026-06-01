@@ -4,7 +4,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { useGraphStore } from "@/store/graph-store"
+import { useGraphContext } from "@/store/graph-context"
 import type { EntityProperty } from "@/types/entity"
 
 export type EntityNodeProps = NodeProps & {
@@ -12,7 +12,8 @@ export type EntityNodeProps = NodeProps & {
 }
 
 export function EntityNode({ id, data }: EntityNodeProps) {
-    const isSelected = useGraphStore((s) => s.selectedEntityId === id)
+    const { state } = useGraphContext()
+    const isSelected = state.selectedEntityId === id
 
     return (
         <div

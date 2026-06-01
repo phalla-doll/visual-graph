@@ -5,16 +5,16 @@ import { EntityList } from "@/components/sidebar/entity-list"
 import { SearchPanel } from "@/components/sidebar/search-panel"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useGraphStore, type SidebarTab } from "@/store/graph-store"
+import { useGraphContext } from "@/store/graph-context"
+import type { SidebarTab } from "@/store/graph-store"
 
 export function Sidebar() {
-    const tab = useGraphStore((s) => s.sidebarTab)
-    const setSidebarTab = useGraphStore((s) => s.setSidebarTab)
+    const { state, actions } = useGraphContext()
 
     return (
         <Tabs
-            value={tab}
-            onValueChange={(value) => setSidebarTab(value as SidebarTab)}
+            value={state.sidebarTab}
+            onValueChange={(value) => actions.setSidebarTab(value as SidebarTab)}
             className="h-full"
         >
             <div className="p-2">

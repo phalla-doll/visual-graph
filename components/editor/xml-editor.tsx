@@ -13,14 +13,10 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { useGraphStore } from "@/store/graph-store"
+import { useGraphContext } from "@/store/graph-context"
 
 export function XmlEditor() {
-    const xml = useGraphStore((s) => s.xml)
-    const parseError = useGraphStore((s) => s.parseError)
-    const setXml = useGraphStore((s) => s.setXml)
-    const parse = useGraphStore((s) => s.parse)
-    const parseDocuments = useGraphStore((s) => s.parseDocuments)
+    const { state, actions } = useGraphContext()
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     function onUploadClick() {
@@ -33,9 +29,9 @@ export function XmlEditor() {
         if (files.length === 0) return
         const texts = await Promise.all(files.map((f) => f.text()))
         if (texts.length === 1) {
-            setXml(texts[0])
+            actions.setXml(texts[0])
         } else {
-            parseDocuments(texts)
+            actions.parseDocuments(texts)
         }
     }
 
@@ -50,16 +46,16 @@ export function XmlEditor() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
                 <Textarea
-                    value={xml}
-                    onChange={(e) => setXml(e.target.value)}
+                    value={state.xml}
+                    onChange={(e) => actions.setXml(e.target.value)}
                     placeholder={
                         '<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">…'
                     }
                     className="min-h-[280px] font-mono text-xs"
                     spellCheck={false}
                 />
-                {parseError && (
-                    <p className="text-sm text-destructive">{parseError}</p>
+                {state.parseError && (
+                    <p className="text-sm text-destructive">{state.parseError}</p>
                 )}
                 <input
                     ref={fileInputRef}
@@ -74,7 +70,7 @@ export function XmlEditor() {
                 <Button variant="outline" onClick={onUploadClick}>
                     <RiFolderOpenLine /> Upload file(s)
                 </Button>
-                <Button onClick={parse} disabled={!xml.trim()}>
+                <Button onClick={actions.parse} disabled={!state.xml.trim()}>
                     <RiPlayLine /> Parse
                 </Button>
             </CardFooter>
