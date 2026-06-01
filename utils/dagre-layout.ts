@@ -44,8 +44,7 @@ function nodeHeight(node: GraphNode): number {
 }
 
 function estimateNodeWidth(node: GraphNode): number {
-    const headerW =
-        PADDING_X + HEADER_TOGGLE + node.label.length * CHAR_W_LABEL
+    const headerW = PADDING_X + HEADER_TOGGLE + node.label.length * CHAR_W_LABEL
     let rowW = 0
     for (const p of node.properties) {
         const left = (p.isKey ? PK_BADGE : 0) + p.name.length * CHAR_W_NAME

@@ -14,7 +14,25 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 import { useGraphContext } from "@/store/graph-context"
+import type { Cardinality } from "@/types/entity"
+
+function CardinalityBadge({ cardinality }: { cardinality: Cardinality }) {
+    return (
+        <Badge
+            variant="outline"
+            className={cn(
+                "h-4 shrink-0 px-1.5 text-[10px]",
+                cardinality === "one"
+                    ? "border-sky-500/60 text-sky-700 dark:border-sky-400/60 dark:text-sky-300"
+                    : "border-amber-500/60 text-amber-700 dark:border-amber-400/60 dark:text-amber-300"
+            )}
+        >
+            {cardinality}
+        </Badge>
+    )
+}
 
 function EmptyState() {
     return (
@@ -130,21 +148,17 @@ function Outgoing() {
                                     title={`${rel.name} → ${rel.target}`}
                                     className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted disabled:opacity-60 disabled:hover:bg-transparent"
                                 >
-                                    <span className="min-w-0 flex-1 truncate">
-                                        <span className="font-medium">
+                                    <span className="flex min-w-0 flex-1 flex-col">
+                                        <span className="truncate font-medium">
                                             {rel.name}
                                         </span>
-                                        <span className="text-muted-foreground">
-                                            {" "}
+                                        <span className="truncate text-muted-foreground">
                                             → {rel.target}
                                         </span>
                                     </span>
-                                    <Badge
-                                        variant="outline"
-                                        className="h-4 shrink-0 px-1 text-[10px]"
-                                    >
-                                        {rel.cardinality}
-                                    </Badge>
+                                    <CardinalityBadge
+                                        cardinality={rel.cardinality}
+                                    />
                                 </button>
                             </li>
                         )
@@ -182,20 +196,17 @@ function Incoming() {
                                 title={`${rel.fromEntity.name}.${rel.name}`}
                                 className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted"
                             >
-                                <span className="min-w-0 flex-1 truncate">
-                                    <span className="text-muted-foreground">
-                                        {rel.fromEntity.name}.
+                                <span className="flex min-w-0 flex-1 flex-col">
+                                    <span className="truncate font-medium">
+                                        {rel.fromEntity.name}
                                     </span>
-                                    <span className="font-medium">
-                                        {rel.name}
+                                    <span className="truncate text-muted-foreground">
+                                        ← {rel.name}
                                     </span>
                                 </span>
-                                <Badge
-                                    variant="outline"
-                                    className="h-4 shrink-0 px-1 text-[10px]"
-                                >
-                                    {rel.cardinality}
-                                </Badge>
+                                <CardinalityBadge
+                                    cardinality={rel.cardinality}
+                                />
                             </button>
                         </li>
                     ))}
