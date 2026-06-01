@@ -106,7 +106,7 @@ export async function POST(request: Request) {
             headers: {
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
-                Accept: "application/json",
+                Accept: "text/event-stream",
             },
             body: JSON.stringify({
                 model: MODEL,
@@ -117,7 +117,11 @@ export async function POST(request: Request) {
                 max_tokens: 8192,
                 temperature: 0.6,
                 top_p: 0.95,
-                stream: false,
+                // Stream so response headers arrive immediately. For large entities
+                // (many properties), non-streaming requests can exceed undici's 300s
+                // headersTimeout while the model is still reasoning, which surfaces
+                // to the user as a 5-minute hang ending in 502.
+                stream: true,
             }),
         })
     } catch (err) {
@@ -138,31 +142,72 @@ export async function POST(request: Request) {
         )
     }
 
-    const data = (await upstream.json().catch(() => null)) as {
-        choices?: {
-            finish_reason?: string
-            message?: {
-                content?: string | null
-                reasoning_content?: string | null
+    if (!upstream.body) {
+        return NextResponse.json(
+            { error: "Upstream returned an empty stream." },
+            { status: 502 }
+        )
+    }
+
+    let contentText = ""
+    let reasoningText = ""
+    let finishReason: string | undefined
+    try {
+        const reader = upstream.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ""
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            let nl: number
+            while ((nl = buffer.indexOf("\n")) !== -1) {
+                const rawLine = buffer.slice(0, nl)
+                buffer = buffer.slice(nl + 1)
+                const line = rawLine.trim()
+                if (!line.startsWith("data:")) continue
+                const payload = line.slice(5).trim()
+                if (!payload || payload === "[DONE]") continue
+                try {
+                    const parsed = JSON.parse(payload) as {
+                        choices?: {
+                            finish_reason?: string | null
+                            delta?: {
+                                content?: string | null
+                                reasoning_content?: string | null
+                            }
+                        }[]
+                    }
+                    const choice = parsed.choices?.[0]
+                    if (choice?.delta?.content)
+                        contentText += choice.delta.content
+                    if (choice?.delta?.reasoning_content)
+                        reasoningText += choice.delta.reasoning_content
+                    if (choice?.finish_reason)
+                        finishReason = choice.finish_reason
+                } catch {
+                    // Skip malformed SSE frames — keep reading the rest.
+                }
             }
-        }[]
-    } | null
-    const choice = data?.choices?.[0]
-    const message = choice?.message
-    const summary = (
-        message?.content ??
-        message?.reasoning_content ??
-        ""
-    ).trim()
+        }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : "Stream error"
+        return NextResponse.json(
+            { error: `Upstream stream failed: ${message}` },
+            { status: 502 }
+        )
+    }
+
+    const summary = (contentText || reasoningText).trim()
     if (!summary) {
         return NextResponse.json(
             {
-                error: `Upstream did not return a summary (finish_reason=${choice?.finish_reason ?? "unknown"}).`,
+                error: `Upstream did not return a summary (finish_reason=${finishReason ?? "unknown"}).`,
             },
             { status: 502 }
         )
     }
-    if (choice?.finish_reason === "length") {
+    if (finishReason === "length") {
         return NextResponse.json(
             {
                 error: "Model ran out of token budget before completing the summary. Try again.",
