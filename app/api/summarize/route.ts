@@ -16,38 +16,130 @@ interface SummarizeRequest {
     incoming: IncomingRef[]
 }
 
+// Cap how many non-key properties we list verbatim. Above this, the tail is
+// collapsed into a typed count to keep the prompt short for wide entities.
+const MAX_LISTED_NON_KEY_PROPS = 10
+// Up to this many example names per type in the collapsed tail.
+const TAIL_EXAMPLES_PER_TYPE = 2
+// Cap how many relationships (outgoing or incoming) we list verbatim.
+const MAX_LISTED_RELS = 8
+// Up to this many target/source names in a collapsed relationship tail.
+const TAIL_REL_NAMES = 5
+
+function stripEdm(type: string): string {
+    return type.startsWith("Edm.") ? type.slice(4) : type
+}
+
+function card(c: "one" | "many"): string {
+    return c === "many" ? "to-many" : "to-one"
+}
+
 function propertyLine(p: EntityProperty): string {
-    const flags = [
-        p.isKey ? "key" : null,
-        p.nullable ? "nullable" : "not nullable",
-    ].filter(Boolean)
-    return `- ${p.name}: ${p.type} (${flags.join(", ")})`
+    const flags: string[] = []
+    if (p.isKey) flags.push("key")
+    if (p.nullable) flags.push("nullable")
+    const suffix = flags.length ? ` (${flags.join(", ")})` : ""
+    return `- ${p.name}: ${stripEdm(p.type)}${suffix}`
+}
+
+function summarizeTail(props: EntityProperty[]): string {
+    const byType = new Map<string, string[]>()
+    for (const p of props) {
+        const t = stripEdm(p.type)
+        const arr = byType.get(t)
+        if (arr) arr.push(p.name)
+        else byType.set(t, [p.name])
+    }
+    const parts: string[] = []
+    for (const [type, names] of byType) {
+        const examples = names.slice(0, TAIL_EXAMPLES_PER_TYPE).join(", ")
+        const more =
+            names.length > TAIL_EXAMPLES_PER_TYPE
+                ? `, +${names.length - TAIL_EXAMPLES_PER_TYPE} more`
+                : ""
+        parts.push(`${names.length} ${type} (${examples}${more})`)
+    }
+    return parts.join("; ")
+}
+
+function propertyLines(entity: Entity): string[] {
+    if (!entity.properties.length) return ["- (none)"]
+    const keys = entity.properties.filter((p) => p.isKey)
+    const nonKeys = entity.properties.filter((p) => !p.isKey)
+    const listed = nonKeys.slice(0, MAX_LISTED_NON_KEY_PROPS)
+    const tail = nonKeys.slice(MAX_LISTED_NON_KEY_PROPS)
+    const lines = [...keys.map(propertyLine), ...listed.map(propertyLine)]
+    if (tail.length)
+        lines.push(`- +${tail.length} more: ${summarizeTail(tail)}`)
+    return lines
 }
 
 function outgoingLine(r: Relationship): string {
-    return `- ${r.name} → ${r.target} (${r.cardinality === "many" ? "to-many" : "to-one"})`
+    return `- ${r.name} → ${r.target} (${card(r.cardinality)})`
 }
 
 function incomingLine(r: IncomingRef): string {
-    return `- ${r.fromName}.${r.name} (${r.cardinality === "many" ? "to-many" : "to-one"})`
+    return `- ${r.fromName}.${r.name} (${card(r.cardinality)})`
+}
+
+function groupedRelTail(names: string[], label: string): string {
+    const counts = new Map<string, number>()
+    for (const n of names) counts.set(n, (counts.get(n) ?? 0) + 1)
+    const entries = Array.from(counts.entries())
+    const head = entries
+        .slice(0, TAIL_REL_NAMES)
+        .map(([n, c]) => (c > 1 ? `${n} ×${c}` : n))
+        .join(", ")
+    const extra =
+        entries.length > TAIL_REL_NAMES
+            ? `, +${entries.length - TAIL_REL_NAMES} more ${label}`
+            : ""
+    return `${head}${extra}`
+}
+
+function outgoingLines(rels: Relationship[]): string[] {
+    if (!rels.length) return ["- (none)"]
+    const listed = rels.slice(0, MAX_LISTED_RELS)
+    const tail = rels.slice(MAX_LISTED_RELS)
+    const lines = listed.map(outgoingLine)
+    if (tail.length) {
+        const grouped = groupedRelTail(
+            tail.map((r) => r.target),
+            "targets"
+        )
+        lines.push(`- +${tail.length} more → ${grouped}`)
+    }
+    return lines
+}
+
+function incomingLines(refs: IncomingRef[]): string[] {
+    if (!refs.length) return ["- (none)"]
+    const listed = refs.slice(0, MAX_LISTED_RELS)
+    const tail = refs.slice(MAX_LISTED_RELS)
+    const lines = listed.map(incomingLine)
+    if (tail.length) {
+        const grouped = groupedRelTail(
+            tail.map((r) => r.fromName),
+            "sources"
+        )
+        lines.push(`- +${tail.length} more from ${grouped}`)
+    }
+    return lines
 }
 
 function buildPrompt({ entity, incoming }: SummarizeRequest): string {
+    const header = `Entity: ${entity.name}${entity.namespace ? ` (namespace ${entity.namespace})` : ""}`
     const lines: string[] = [
-        `Entity: ${entity.name}${entity.namespace ? ` (namespace ${entity.namespace})` : ""}`,
+        header,
         "",
-        "Properties:",
-        ...(entity.properties.length
-            ? entity.properties.map(propertyLine)
-            : ["- (none)"]),
+        `Properties (${entity.properties.length}):`,
+        ...propertyLines(entity),
         "",
-        "Outgoing relationships:",
-        ...(entity.relationships.length
-            ? entity.relationships.map(outgoingLine)
-            : ["- (none)"]),
+        `Outgoing relationships (${entity.relationships.length}):`,
+        ...outgoingLines(entity.relationships),
         "",
-        "Incoming relationships:",
-        ...(incoming.length ? incoming.map(incomingLine) : ["- (none)"]),
+        `Incoming relationships (${incoming.length}):`,
+        ...incomingLines(incoming),
         "",
         "Write a single paragraph (3–4 sentences) describing what this entity likely represents in the domain and how it connects to its neighbors. Plain prose. No headings, no bullets, no markdown.",
     ]
