@@ -10,18 +10,34 @@ import { Sidebar } from "@/components/sidebar/sidebar"
 import { useGraphContext, type GraphMeta } from "@/store/graph-context"
 import { GraphMetaProvider } from "@/store/graph-meta-provider"
 
+function LoadingIndicator({ label }: { label: string }) {
+    return (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <div className="animate-spin">
+                <HugeiconsIcon icon={Loading03Icon} className="size-6" />
+            </div>
+            <p className="text-sm">{label}</p>
+        </div>
+    )
+}
+
+function CanvasLoading() {
+    return (
+        <div className="flex h-full items-center justify-center bg-muted/20">
+            <LoadingIndicator label="Loading graph…" />
+        </div>
+    )
+}
+
 const GraphCanvas = dynamic(
     () => import("@/components/graph/graph-canvas").then((m) => m.GraphCanvas),
-    { ssr: false }
+    { ssr: false, loading: () => <CanvasLoading /> }
 )
 
 function ParsingScreen() {
     return (
-        <main className="flex min-h-svh flex-col items-center justify-center gap-3 p-6 text-muted-foreground">
-            <div className="animate-spin">
-                <HugeiconsIcon icon={Loading03Icon} className="size-6" />
-            </div>
-            <p className="text-sm">Parsing document…</p>
+        <main className="flex min-h-svh flex-col items-center justify-center p-6">
+            <LoadingIndicator label="Parsing document…" />
         </main>
     )
 }
