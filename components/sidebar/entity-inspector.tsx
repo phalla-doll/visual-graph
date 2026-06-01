@@ -127,9 +127,10 @@ function Outgoing() {
                                     type="button"
                                     disabled={!target}
                                     onClick={() => target && go(target.id)}
-                                    className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted disabled:opacity-60 disabled:hover:bg-transparent"
+                                    title={`${rel.name} → ${rel.target}`}
+                                    className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted disabled:opacity-60 disabled:hover:bg-transparent"
                                 >
-                                    <span>
+                                    <span className="min-w-0 flex-1 truncate">
                                         <span className="font-medium">
                                             {rel.name}
                                         </span>
@@ -140,7 +141,7 @@ function Outgoing() {
                                     </span>
                                     <Badge
                                         variant="outline"
-                                        className="h-4 px-1 text-[10px]"
+                                        className="h-4 shrink-0 px-1 text-[10px]"
                                     >
                                         {rel.cardinality}
                                     </Badge>
@@ -178,9 +179,10 @@ function Incoming() {
                             <button
                                 type="button"
                                 onClick={() => go(rel.fromEntity.id)}
-                                className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted"
+                                title={`${rel.fromEntity.name}.${rel.name}`}
+                                className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-muted"
                             >
-                                <span>
+                                <span className="min-w-0 flex-1 truncate">
                                     <span className="text-muted-foreground">
                                         {rel.fromEntity.name}.
                                     </span>
@@ -190,7 +192,7 @@ function Incoming() {
                                 </span>
                                 <Badge
                                     variant="outline"
-                                    className="h-4 px-1 text-[10px]"
+                                    className="h-4 shrink-0 px-1 text-[10px]"
                                 >
                                     {rel.cardinality}
                                 </Badge>
