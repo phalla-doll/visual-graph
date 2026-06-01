@@ -23,10 +23,17 @@ import { useGraphStore } from "@/store/graph-store"
 import { toMermaidER } from "@/utils/mermaid"
 
 export function Toolbar() {
+    // `direction` subscription kept for the icon swap below; the toggle handler
+    // reads via getState() since the click path doesn't need to be reactive.
     const direction = useGraphStore((s) => s.layoutDirection)
     const setDirection = useGraphStore((s) => s.setLayoutDirection)
     const reset = useGraphStore((s) => s.reset)
     const { fitView } = useReactFlow()
+
+    function onToggleDirection() {
+        const current = useGraphStore.getState().layoutDirection
+        setDirection(current === "LR" ? "TB" : "LR")
+    }
 
     function onCopyMermaid() {
         const { graph, entities } = useGraphStore.getState()
@@ -74,9 +81,7 @@ export function Toolbar() {
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            onClick={() =>
-                                setDirection(direction === "LR" ? "TB" : "LR")
-                            }
+                            onClick={onToggleDirection}
                         >
                             {direction === "LR" ? (
                                 <RiArrowLeftRightLine />

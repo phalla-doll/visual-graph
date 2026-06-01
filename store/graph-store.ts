@@ -145,7 +145,7 @@ export const useGraphStore = create<GraphStore>()(
         }),
         {
             name: "visual-graph",
-            version: 1,
+            version: 2,
             storage: createJSONStorage(() =>
                 typeof window === "undefined"
                     ? (undefined as unknown as Storage)
@@ -153,12 +153,47 @@ export const useGraphStore = create<GraphStore>()(
             ),
             partialize: (state) => ({
                 xml: state.xml,
-                entities: state.entities,
-                graph: state.graph,
                 selectedEntityId: state.selectedEntityId,
                 layoutDirection: state.layoutDirection,
                 sidebarTab: state.sidebarTab,
+                summaries: state.summaries,
             }),
+            migrate: (persisted, version) => {
+                if (version < 2) {
+                    const p = (persisted ?? {}) as {
+                        xml?: string
+                        selectedEntityId?: string | null
+                        layoutDirection?: LayoutDirection
+                        sidebarTab?: SidebarTab
+                        summaries?: Record<string, string>
+                    }
+                    return {
+                        xml: p.xml ?? "",
+                        selectedEntityId: p.selectedEntityId ?? null,
+                        layoutDirection: p.layoutDirection ?? "LR",
+                        sidebarTab: p.sidebarTab ?? "entities",
+                        summaries: p.summaries ?? {},
+                    }
+                }
+                return persisted
+            },
+            onRehydrateStorage: () => (rehydrated, error) => {
+                if (error || !rehydrated?.xml?.trim()) return
+                try {
+                    const entities = entitiesFromDocuments([rehydrated.xml])
+                    useGraphStore.setState({
+                        entities,
+                        graph: buildGraph(entities),
+                        parseError: null,
+                    })
+                } catch (err) {
+                    useGraphStore.setState({
+                        parseError: messageFor(err),
+                        entities: [],
+                        graph: EMPTY_GRAPH,
+                    })
+                }
+            },
             skipHydration: true,
         }
     )

@@ -1,14 +1,26 @@
 "use client"
 
+import dynamic from "next/dynamic"
+
 import { XmlEditor } from "@/components/editor/xml-editor"
-import { GraphCanvas } from "@/components/graph/graph-canvas"
 import { Sidebar } from "@/components/sidebar/sidebar"
+import { useHasHydrated } from "@/components/store-hydrator"
 import { useGraphStore } from "@/store/graph-store"
 
+const GraphCanvas = dynamic(
+    () => import("@/components/graph/graph-canvas").then((m) => m.GraphCanvas),
+    { ssr: false }
+)
+
 export default function Page() {
+    const hasHydrated = useHasHydrated()
     const hasGraph = useGraphStore((s) => s.entities.length > 0)
     const entityCount = useGraphStore((s) => s.entities.length)
     const edgeCount = useGraphStore((s) => s.graph.edges.length)
+
+    if (!hasHydrated) {
+        return <main className="flex min-h-svh items-center justify-center p-6" />
+    }
 
     if (!hasGraph) {
         return (
