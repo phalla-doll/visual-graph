@@ -1,7 +1,8 @@
 "use client"
 
 import { useRef } from "react"
-import { RiFolderOpenLine, RiPlayLine } from "@remixicon/react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { FolderOpenIcon, PlayIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -70,10 +71,10 @@ export function XmlEditor() {
             </CardContent>
             <CardFooter className="gap-2">
                 <Button variant="outline" onClick={onUploadClick}>
-                    <RiFolderOpenLine /> Upload file(s)
+                    <HugeiconsIcon icon={FolderOpenIcon} /> Upload file(s)
                 </Button>
                 <Button onClick={actions.parse} disabled={!state.xml.trim()}>
-                    <RiPlayLine /> Parse
+                    <HugeiconsIcon icon={PlayIcon} /> Parse
                 </Button>
             </CardFooter>
         </Card>

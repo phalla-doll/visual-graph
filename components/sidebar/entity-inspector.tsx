@@ -1,6 +1,10 @@
 "use client"
 
-import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+    ArrowLeftRightIcon,
+    ArrowRight01Icon,
+} from "@hugeicons/core-free-icons"
 
 import { AISummary } from "@/components/sidebar/ai-summary"
 import {
@@ -109,7 +113,8 @@ function Outgoing() {
     return (
         <section>
             <h3 className="mb-1.5 flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <RiArrowRightLine className="size-3" /> Outgoing
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" />{" "}
+                Outgoing
             </h3>
             {entity.relationships.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">None.</p>
@@ -162,7 +167,8 @@ function Incoming() {
     return (
         <section>
             <h3 className="mb-1.5 flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                <RiArrowLeftRightLine className="size-3" /> Incoming
+                <HugeiconsIcon icon={ArrowLeftRightIcon} className="size-3" />{" "}
+                Incoming
             </h3>
             {incoming.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">None.</p>

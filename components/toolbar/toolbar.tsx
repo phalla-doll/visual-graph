@@ -1,14 +1,15 @@
 "use client"
 
 import { useReactFlow } from "@xyflow/react"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
-    RiArrowLeftRightLine,
-    RiArrowUpDownLine,
-    RiClipboardLine,
-    RiDownload2Line,
-    RiFocus3Line,
-    RiRefreshLine,
-} from "@remixicon/react"
+    ArrowLeftRightIcon,
+    ArrowUpDownIcon,
+    ClipboardIcon,
+    Download01Icon,
+    FocusPointIcon,
+    RefreshIcon,
+} from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -62,7 +63,7 @@ export function Toolbar() {
                             size="icon-sm"
                             onClick={() => fitView({ duration: 300 })}
                         >
-                            <RiFocus3Line />
+                            <HugeiconsIcon icon={FocusPointIcon} />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>Fit view</TooltipContent>
@@ -76,9 +77,9 @@ export function Toolbar() {
                             onClick={onToggleDirection}
                         >
                             {state.layoutDirection === "LR" ? (
-                                <RiArrowLeftRightLine />
+                                <HugeiconsIcon icon={ArrowLeftRightIcon} />
                             ) : (
-                                <RiArrowUpDownLine />
+                                <HugeiconsIcon icon={ArrowUpDownIcon} />
                             )}
                         </Button>
                     </TooltipTrigger>
@@ -100,7 +101,7 @@ export function Toolbar() {
                             size="sm"
                             onClick={onCopyMermaid}
                         >
-                            <RiClipboardLine /> Mermaid
+                            <HugeiconsIcon icon={ClipboardIcon} /> Mermaid
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>Copy as Mermaid ER diagram</TooltipContent>
@@ -113,7 +114,7 @@ export function Toolbar() {
                             size="sm"
                             onClick={onDownloadJson}
                         >
-                            <RiDownload2Line /> JSON
+                            <HugeiconsIcon icon={Download01Icon} /> JSON
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>Download graph as JSON</TooltipContent>
@@ -128,7 +129,7 @@ export function Toolbar() {
                             size="sm"
                             onClick={actions.reset}
                         >
-                            <RiRefreshLine /> Reset
+                            <HugeiconsIcon icon={RefreshIcon} /> Reset
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>

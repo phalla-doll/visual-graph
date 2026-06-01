@@ -1,6 +1,7 @@
 "use client"
 
-import { RiSparkling2Line } from "@remixicon/react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { SparklesIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { useGraphContext } from "@/store/graph-context"
@@ -21,7 +22,8 @@ export function AISummary({ entity }: AISummaryProps) {
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <h3 className="flex items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    <RiSparkling2Line className="size-3" /> AI Summary
+                    <HugeiconsIcon icon={SparklesIcon} className="size-3" /> AI
+                    Summary
                 </h3>
                 <Button
                     size="xs"
