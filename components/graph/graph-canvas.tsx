@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, type RefObject } from "react"
 import {
     Background,
     Controls,
@@ -20,42 +20,57 @@ import {
     RelationshipMarkers,
 } from "@/components/graph/relationship-edge"
 import { Toolbar } from "@/components/toolbar/toolbar"
-import { useGraphStore } from "@/store/graph-store"
+import { useGraphContext } from "@/store/graph-context"
 import { layoutGraph } from "@/utils/dagre-layout"
 
 const nodeTypes = { entity: EntityNode }
 const edgeTypes = { relationship: RelationshipEdge }
 
-function CanvasInner() {
-    const graph = useGraphStore((s) => s.graph)
-    const direction = useGraphStore((s) => s.layoutDirection)
-    const selectedEntityId = useGraphStore((s) => s.selectedEntityId)
-    const select = useGraphStore((s) => s.select)
+export type PanRef = RefObject<((id: string) => void) | null>
+
+interface GraphCanvasProps {
+    panRef?: PanRef
+}
+
+function CanvasInner({ panRef }: GraphCanvasProps) {
+    const { state, actions } = useGraphContext()
     const { setCenter, getNode } = useReactFlow()
 
     const { nodes, edges } = useMemo(
-        () => layoutGraph(graph.nodes, graph.edges, direction),
-        [graph, direction]
+        () => layoutGraph(state.graph.nodes, state.graph.edges, state.layoutDirection),
+        [state.graph, state.layoutDirection]
+    )
+
+    const panToNode = useCallback(
+        (id: string) => {
+            const node = getNode(id)
+            if (!node) return
+            const width = node.measured?.width ?? 220
+            const height = node.measured?.height ?? 120
+            setCenter(
+                node.position.x + width / 2,
+                node.position.y + height / 2,
+                { duration: 400, zoom: 1.2 }
+            )
+        },
+        [setCenter, getNode]
     )
 
     useEffect(() => {
-        if (!selectedEntityId) return
-        const node = getNode(selectedEntityId)
-        if (!node) return
-        const width = node.measured?.width ?? 220
-        const height = node.measured?.height ?? 120
-        setCenter(node.position.x + width / 2, node.position.y + height / 2, {
-            duration: 400,
-            zoom: 1.2,
-        })
-    }, [selectedEntityId, getNode, setCenter])
+        if (!panRef) return
+        panRef.current = panToNode
+        return () => {
+            panRef.current = null
+        }
+    }, [panRef, panToNode])
 
     function onNodeClick(_: React.MouseEvent, node: ReactFlowNode) {
-        select(node.id)
+        actions.select(node.id)
+        panToNode(node.id)
     }
 
     function onPaneClick() {
-        select(null)
+        actions.select(null)
     }
 
     return (
@@ -82,10 +97,10 @@ function CanvasInner() {
     )
 }
 
-export function GraphCanvas() {
+export function GraphCanvas({ panRef }: GraphCanvasProps) {
     return (
         <ReactFlowProvider>
-            <CanvasInner />
+            <CanvasInner panRef={panRef} />
         </ReactFlowProvider>
     )
 }

@@ -19,18 +19,14 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useGraphStore } from "@/store/graph-store"
-import { toMermaidER } from "@/utils/mermaid"
+import { useGraphContext } from "@/store/graph-context"
 
 export function Toolbar() {
-    const direction = useGraphStore((s) => s.layoutDirection)
-    const setDirection = useGraphStore((s) => s.setLayoutDirection)
-    const reset = useGraphStore((s) => s.reset)
+    const { state, actions } = useGraphContext()
     const { fitView } = useReactFlow()
 
     function onCopyMermaid() {
-        const { graph, entities } = useGraphStore.getState()
-        const text = toMermaidER(graph, entities)
+        const text = actions.exportMermaid()
         navigator.clipboard.writeText(text).then(
             () => toast.success("Mermaid ER diagram copied to clipboard"),
             () => toast.error("Failed to copy to clipboard")
@@ -38,8 +34,7 @@ export function Toolbar() {
     }
 
     function onDownloadJson() {
-        const { graph } = useGraphStore.getState()
-        const blob = new Blob([JSON.stringify(graph, null, 2)], {
+        const blob = new Blob([actions.exportJson()], {
             type: "application/json",
         })
         const url = URL.createObjectURL(blob)
@@ -51,6 +46,10 @@ export function Toolbar() {
         a.remove()
         URL.revokeObjectURL(url)
         toast.success("Downloaded visual-graph.json")
+    }
+
+    function onToggleDirection() {
+        actions.setLayoutDirection(state.layoutDirection === "LR" ? "TB" : "LR")
     }
 
     return (
@@ -74,11 +73,9 @@ export function Toolbar() {
                         <Button
                             variant="ghost"
                             size="icon-sm"
-                            onClick={() =>
-                                setDirection(direction === "LR" ? "TB" : "LR")
-                            }
+                            onClick={onToggleDirection}
                         >
-                            {direction === "LR" ? (
+                            {state.layoutDirection === "LR" ? (
                                 <RiArrowLeftRightLine />
                             ) : (
                                 <RiArrowUpDownLine />
@@ -87,7 +84,9 @@ export function Toolbar() {
                     </TooltipTrigger>
                     <TooltipContent>
                         Layout:{" "}
-                        {direction === "LR" ? "left → right" : "top → bottom"}{" "}
+                        {state.layoutDirection === "LR"
+                            ? "left → right"
+                            : "top → bottom"}{" "}
                         (toggle)
                     </TooltipContent>
                 </Tooltip>
@@ -124,7 +123,11 @@ export function Toolbar() {
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={reset}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={actions.reset}
+                        >
                             <RiRefreshLine /> Reset
                         </Button>
                     </TooltipTrigger>

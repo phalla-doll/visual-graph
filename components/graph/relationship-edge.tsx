@@ -58,71 +58,73 @@ export function RelationshipEdge({
     )
 }
 
+const RELATIONSHIP_MARKERS = (
+    <svg style={{ position: "absolute", width: 0, height: 0 }}>
+        <defs>
+            <marker
+                id="vg-marker-one"
+                viewBox="0 0 12 12"
+                refX="10"
+                refY="6"
+                markerWidth="12"
+                markerHeight="12"
+                orient="auto-start-reverse"
+            >
+                <line
+                    x1="9"
+                    y1="2"
+                    x2="9"
+                    y2="10"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                />
+                <line
+                    x1="2"
+                    y1="6"
+                    x2="9"
+                    y2="6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                />
+            </marker>
+            <marker
+                id="vg-marker-many"
+                viewBox="0 0 12 12"
+                refX="10"
+                refY="6"
+                markerWidth="14"
+                markerHeight="14"
+                orient="auto-start-reverse"
+            >
+                <line
+                    x1="2"
+                    y1="6"
+                    x2="10"
+                    y2="6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                />
+                <line
+                    x1="10"
+                    y1="6"
+                    x2="2"
+                    y2="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                />
+                <line
+                    x1="10"
+                    y1="6"
+                    x2="2"
+                    y2="10"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                />
+            </marker>
+        </defs>
+    </svg>
+)
+
 export function RelationshipMarkers() {
-    return (
-        <svg style={{ position: "absolute", width: 0, height: 0 }}>
-            <defs>
-                <marker
-                    id="vg-marker-one"
-                    viewBox="0 0 12 12"
-                    refX="10"
-                    refY="6"
-                    markerWidth="12"
-                    markerHeight="12"
-                    orient="auto-start-reverse"
-                >
-                    <line
-                        x1="9"
-                        y1="2"
-                        x2="9"
-                        y2="10"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                    <line
-                        x1="2"
-                        y1="6"
-                        x2="9"
-                        y2="6"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                </marker>
-                <marker
-                    id="vg-marker-many"
-                    viewBox="0 0 12 12"
-                    refX="10"
-                    refY="6"
-                    markerWidth="14"
-                    markerHeight="14"
-                    orient="auto-start-reverse"
-                >
-                    <line
-                        x1="2"
-                        y1="6"
-                        x2="10"
-                        y2="6"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                    <line
-                        x1="10"
-                        y1="6"
-                        x2="2"
-                        y2="2"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                    <line
-                        x1="10"
-                        y1="6"
-                        x2="2"
-                        y2="10"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                </marker>
-            </defs>
-        </svg>
-    )
+    return RELATIONSHIP_MARKERS
 }

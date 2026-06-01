@@ -4,8 +4,11 @@ import { createJSONStorage, persist } from "zustand/middleware"
 import { EdmxParseError, extractEntities } from "@/parser/edmx-parser"
 import { buildGraph } from "@/parser/graph-builder"
 import { XmlParseError, parseXml } from "@/parser/xml-parser"
+import type { SummaryStatus } from "@/store/graph-context"
 import type { Entity } from "@/types/entity"
 import type { ParsedGraph } from "@/types/graph"
+import { collectIncoming } from "@/utils/incoming-relationships"
+import { toMermaidER } from "@/utils/mermaid"
 
 const EMPTY_GRAPH: ParsedGraph = { nodes: [], edges: [] }
 
@@ -22,6 +25,7 @@ export interface GraphStore {
     layoutDirection: LayoutDirection
     sidebarTab: SidebarTab
     summaries: Record<string, string>
+    summaryStatus: Record<string, SummaryStatus>
 
     setXml: (xml: string) => void
     parse: () => void
@@ -31,6 +35,9 @@ export interface GraphStore {
     setLayoutDirection: (direction: LayoutDirection) => void
     setSidebarTab: (tab: SidebarTab) => void
     setSummary: (id: string, summary: string) => void
+    requestSummary: (entity: Entity) => Promise<void>
+    exportMermaid: () => string
+    exportJson: () => string
     reset: () => void
 }
 
@@ -64,6 +71,7 @@ export const useGraphStore = create<GraphStore>()(
             layoutDirection: "LR",
             sidebarTab: "entities",
             summaries: {},
+            summaryStatus: {},
 
             setXml: (xml) => set({ xml }),
 
@@ -128,7 +136,75 @@ export const useGraphStore = create<GraphStore>()(
             setSummary: (id, summary) =>
                 set((state) => ({
                     summaries: { ...state.summaries, [id]: summary },
+                    summaryStatus: {
+                        ...state.summaryStatus,
+                        [id]: { state: "idle" },
+                    },
                 })),
+
+            requestSummary: async (entity) => {
+                const id = entity.id
+                set((state) => ({
+                    summaryStatus: {
+                        ...state.summaryStatus,
+                        [id]: { state: "loading" },
+                    },
+                }))
+                const setError = (error: string) =>
+                    set((state) => ({
+                        summaryStatus: {
+                            ...state.summaryStatus,
+                            [id]: { state: "error", error },
+                        },
+                    }))
+                try {
+                    const incoming = collectIncoming(entity, get().entities).map(
+                        (r) => ({
+                            fromName: r.fromEntity.name,
+                            name: r.name,
+                            cardinality: r.cardinality,
+                        })
+                    )
+                    const res = await fetch("/api/summarize", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ entity, incoming }),
+                    })
+                    const data = (await res.json().catch(() => null)) as {
+                        summary?: string
+                        error?: string
+                    } | null
+                    if (!res.ok) {
+                        setError(
+                            data?.error ?? `Request failed (HTTP ${res.status}).`
+                        )
+                        return
+                    }
+                    if (!data?.summary) {
+                        setError("No summary returned.")
+                        return
+                    }
+                    set((state) => ({
+                        summaries: {
+                            ...state.summaries,
+                            [id]: data.summary as string,
+                        },
+                        summaryStatus: {
+                            ...state.summaryStatus,
+                            [id]: { state: "idle" },
+                        },
+                    }))
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : "Request failed.")
+                }
+            },
+
+            exportMermaid: () => {
+                const { graph, entities } = get()
+                return toMermaidER(graph, entities)
+            },
+
+            exportJson: () => JSON.stringify(get().graph, null, 2),
 
             reset: () =>
                 set({
@@ -141,11 +217,12 @@ export const useGraphStore = create<GraphStore>()(
                     layoutDirection: "LR",
                     sidebarTab: "entities",
                     summaries: {},
+                    summaryStatus: {},
                 }),
         }),
         {
             name: "visual-graph",
-            version: 1,
+            version: 2,
             storage: createJSONStorage(() =>
                 typeof window === "undefined"
                     ? (undefined as unknown as Storage)
@@ -153,12 +230,47 @@ export const useGraphStore = create<GraphStore>()(
             ),
             partialize: (state) => ({
                 xml: state.xml,
-                entities: state.entities,
-                graph: state.graph,
                 selectedEntityId: state.selectedEntityId,
                 layoutDirection: state.layoutDirection,
                 sidebarTab: state.sidebarTab,
+                summaries: state.summaries,
             }),
+            migrate: (persisted, version) => {
+                if (version < 2) {
+                    const p = (persisted ?? {}) as {
+                        xml?: string
+                        selectedEntityId?: string | null
+                        layoutDirection?: LayoutDirection
+                        sidebarTab?: SidebarTab
+                        summaries?: Record<string, string>
+                    }
+                    return {
+                        xml: p.xml ?? "",
+                        selectedEntityId: p.selectedEntityId ?? null,
+                        layoutDirection: p.layoutDirection ?? "LR",
+                        sidebarTab: p.sidebarTab ?? "entities",
+                        summaries: p.summaries ?? {},
+                    }
+                }
+                return persisted
+            },
+            onRehydrateStorage: () => (rehydrated, error) => {
+                if (error || !rehydrated?.xml?.trim()) return
+                try {
+                    const entities = entitiesFromDocuments([rehydrated.xml])
+                    useGraphStore.setState({
+                        entities,
+                        graph: buildGraph(entities),
+                        parseError: null,
+                    })
+                } catch (err) {
+                    useGraphStore.setState({
+                        parseError: messageFor(err),
+                        entities: [],
+                        graph: EMPTY_GRAPH,
+                    })
+                }
+            },
             skipHydration: true,
         }
     )
