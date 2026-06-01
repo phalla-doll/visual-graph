@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Lora } from "next/font/google"
+import { Geist, Geist_Mono, Lora, DM_Sans } from "next/font/google"
 
 import "./globals.css"
 import { StoreHydrator } from "@/components/store-hydrator"
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const loraHeading = Lora({subsets:['latin'],variable:'--font-heading'});
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'})
+const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'})
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -24,7 +24,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", geist.variable, loraHeading.variable)}
+      className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, loraHeading.variable)}
     >
       <body>
         <ThemeProvider>
