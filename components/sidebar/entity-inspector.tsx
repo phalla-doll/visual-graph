@@ -18,6 +18,36 @@ import { cn } from "@/lib/utils"
 import { useGraphContext } from "@/store/graph-context"
 import type { Cardinality } from "@/types/entity"
 
+function typeColorClass(type: string): string {
+    const short = type.split(".").pop()?.toLowerCase() ?? ""
+    if (short === "string" || short === "guid")
+        return "text-emerald-600 dark:text-emerald-400"
+    if (
+        short === "int16" ||
+        short === "int32" ||
+        short === "int64" ||
+        short === "decimal" ||
+        short === "double" ||
+        short === "single" ||
+        short === "byte" ||
+        short === "sbyte"
+    )
+        return "text-amber-600 dark:text-amber-400"
+    if (short === "boolean") return "text-purple-600 dark:text-purple-400"
+    if (
+        short === "datetime" ||
+        short === "datetimeoffset" ||
+        short === "date" ||
+        short === "time" ||
+        short === "timeofday" ||
+        short === "duration"
+    )
+        return "text-sky-600 dark:text-sky-400"
+    if (short === "binary" || short === "stream")
+        return "text-rose-600 dark:text-rose-400"
+    return "text-muted-foreground"
+}
+
 function CardinalityBadge({ cardinality }: { cardinality: Cardinality }) {
     return (
         <Badge
@@ -106,9 +136,12 @@ function Properties() {
                         </div>
                         <span
                             title={`${p.type}${p.nullable ? "?" : ""}`}
-                            className="max-w-[45%] shrink-0 truncate text-right font-mono text-[10px] text-muted-foreground"
+                            className={cn(
+                                "max-w-[45%] shrink-0 truncate text-right font-mono text-[10px]",
+                                typeColorClass(p.type)
+                            )}
                         >
-                            {p.type}
+                            {p.type.replace(/^Edm\./, "")}
                             {p.nullable ? "?" : ""}
                         </span>
                     </div>
