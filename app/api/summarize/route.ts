@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import type { Entity, EntityProperty, Relationship } from "@/types/entity"
 
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-const MODEL = "stepfun-ai/step-3.7-flash"
+const MODEL = "openai/gpt-oss-120b"
 
 interface IncomingRef {
     fromName: string
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [{ role: "user", content: prompt }],
-                // stepfun-ai/step-3.7-flash is a reasoning model — it spends tokens on
+                // gpt-oss-120b is a reasoning model — it spends tokens on
                 // chain-of-thought before producing `content`. Need headroom or it hits
                 // `finish_reason: "length"` with `content: null`.
                 max_tokens: 8192,

@@ -31,7 +31,7 @@ No test runner is configured.
 
 ## Architecture
 
-This is a **client-heavy Next.js 16 / React 19 app** that parses XML / EDMX / OData schemas in the browser and renders entities + relationships as an interactive graph. There is **one** server-side surface: `app/api/summarize/route.ts`, which proxies entity context to NVIDIA's stepfun model for AI-generated entity summaries (keeps the API key out of the browser bundle). Everything else — parsing, layout, rendering, exports, persistence — runs in the browser.
+This is a **client-heavy Next.js 16 / React 19 app** that parses XML / EDMX / OData schemas in the browser and renders entities + relationships as an interactive graph. There is **one** server-side surface: `app/api/summarize/route.ts`, which proxies entity context to NVIDIA's `openai/gpt-oss-120b` model for AI-generated entity summaries (keeps the API key out of the browser bundle). Everything else — parsing, layout, rendering, exports, persistence — runs in the browser.
 
 ### Server env
 
