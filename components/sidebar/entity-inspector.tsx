@@ -64,38 +64,37 @@ function Properties() {
             <h3 className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Properties
             </h3>
-            <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-xs">
-                    <tbody className="divide-y">
-                        {entity.properties.map((p) => (
-                            <tr key={p.name}>
-                                <td className="px-2.5 py-1.5">
-                                    <div className="flex items-center gap-1.5">
-                                        {p.isKey && (
-                                            <Badge
-                                                variant="secondary"
-                                                className="h-4 px-1 text-[10px]"
-                                            >
-                                                PK
-                                            </Badge>
-                                        )}
-                                        <span
-                                            className={
-                                                p.isKey ? "font-medium" : ""
-                                            }
-                                        >
-                                            {p.name}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="px-2.5 py-1.5 text-right font-mono text-[10px] text-muted-foreground">
-                                    {p.type}
-                                    {p.nullable ? "?" : ""}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className="divide-y overflow-hidden rounded-md border text-xs">
+                {entity.properties.map((p) => (
+                    <div
+                        key={p.name}
+                        className="flex items-center gap-2 px-2.5 py-1.5"
+                    >
+                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                            {p.isKey && (
+                                <Badge
+                                    variant="secondary"
+                                    className="h-4 shrink-0 px-1 text-[10px]"
+                                >
+                                    PK
+                                </Badge>
+                            )}
+                            <span
+                                title={p.name}
+                                className={`truncate ${p.isKey ? "font-medium" : ""}`}
+                            >
+                                {p.name}
+                            </span>
+                        </div>
+                        <span
+                            title={`${p.type}${p.nullable ? "?" : ""}`}
+                            className="max-w-[45%] shrink-0 truncate text-right font-mono text-[10px] text-muted-foreground"
+                        >
+                            {p.type}
+                            {p.nullable ? "?" : ""}
+                        </span>
+                    </div>
+                ))}
             </div>
         </section>
     )
