@@ -32,7 +32,7 @@ function Header() {
                 {entity.name}
             </h2>
             {entity.namespace && (
-                <p className="font-mono text-[10px] text-muted-foreground">
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
                     {entity.namespace}
                 </p>
             )}
@@ -210,7 +210,7 @@ export function EntityInspector() {
     if (!selected) return <EmptyState />
     return (
         <InspectorProvider entity={selected}>
-            <ScrollArea className="h-full">
+            <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:!block">
                 <div className="flex flex-col gap-4 p-3">
                     <EntityInspector.Header />
                     <EntityInspector.Summary />

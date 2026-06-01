@@ -31,7 +31,7 @@ export function EntityList() {
     }
 
     return (
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:!block">
             <ul className="flex flex-col gap-0.5 p-2">
                 {filtered.map((entity) => {
                     const isSelected = entity.id === state.selectedEntityId
@@ -44,16 +44,16 @@ export function EntityList() {
                                     meta.panToNode?.(entity.id)
                                 }}
                                 className={cn(
-                                    "flex w-full flex-col items-start gap-0.5 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+                                    "flex w-full min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted",
                                     isSelected &&
                                         "bg-primary/10 text-primary hover:bg-primary/15"
                                 )}
                             >
-                                <span className="font-medium">
+                                <span className="w-full truncate font-medium">
                                     {entity.name}
                                 </span>
                                 {entity.namespace && (
-                                    <span className="font-mono text-[10px] text-muted-foreground">
+                                    <span className="w-full truncate font-mono text-[10px] text-muted-foreground">
                                         {entity.namespace}
                                     </span>
                                 )}

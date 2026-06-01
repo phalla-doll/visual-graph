@@ -11,6 +11,7 @@ import {
     type Edge as ReactFlowEdge,
     type Node as ReactFlowNode,
 } from "@xyflow/react"
+import { useTheme } from "next-themes"
 
 import "@xyflow/react/dist/style.css"
 
@@ -35,6 +36,8 @@ interface GraphCanvasProps {
 function CanvasInner({ panRef }: GraphCanvasProps) {
     const { state, actions } = useGraphContext()
     const { setCenter, getNode } = useReactFlow()
+    const { resolvedTheme } = useTheme()
+    const colorMode = resolvedTheme === "dark" ? "dark" : "light"
 
     const { nodes, edges } = useMemo(
         () =>
@@ -90,6 +93,7 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
                     onNodeClick={onNodeClick}
                     onPaneClick={onPaneClick}
                     fitView
+                    colorMode={colorMode}
                     proOptions={{ hideAttribution: true }}
                 >
                     <Background gap={20} />
