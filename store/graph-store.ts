@@ -22,6 +22,7 @@ export interface GraphStore {
     selectedEntityId: string | null
     search: string
     parseError: string | null
+    parsing: boolean
     layoutDirection: LayoutDirection
     sidebarTab: SidebarTab
     summaries: Record<string, string>
@@ -30,6 +31,7 @@ export interface GraphStore {
     setXml: (xml: string) => void
     parse: () => void
     parseDocuments: (documents: string[]) => void
+    applyEntities: (entities: Entity[]) => void
     select: (id: string | null) => void
     setSearch: (q: string) => void
     setLayoutDirection: (direction: LayoutDirection) => void
@@ -68,6 +70,7 @@ export const useGraphStore = create<GraphStore>()(
             selectedEntityId: null,
             search: "",
             parseError: null,
+            parsing: false,
             layoutDirection: "LR",
             sidebarTab: "entities",
             summaries: {},
@@ -83,41 +86,73 @@ export const useGraphStore = create<GraphStore>()(
                     })
                     return
                 }
-                try {
-                    const entities = entitiesFromDocuments([xml])
-                    set({
-                        entities,
-                        graph: buildGraph(entities),
-                        parseError: null,
-                        selectedEntityId: null,
-                    })
-                } catch (err) {
-                    set({
-                        parseError: messageFor(err),
-                        entities: [],
-                        graph: EMPTY_GRAPH,
-                    })
-                }
+                set({ parsing: true, parseError: null })
+                setTimeout(() => {
+                    try {
+                        const entities = entitiesFromDocuments([xml])
+                        set({
+                            entities,
+                            graph: buildGraph(entities),
+                            parseError: null,
+                            selectedEntityId: null,
+                            parsing: false,
+                        })
+                    } catch (err) {
+                        set({
+                            parseError: messageFor(err),
+                            entities: [],
+                            graph: EMPTY_GRAPH,
+                            parsing: false,
+                        })
+                    }
+                }, 0)
             },
 
             parseDocuments: (documents) => {
                 if (documents.length === 0) return
-                try {
-                    const entities = entitiesFromDocuments(documents)
-                    set({
-                        xml: documents[0] ?? "",
-                        entities,
-                        graph: buildGraph(entities),
-                        parseError: null,
-                        selectedEntityId: null,
-                    })
-                } catch (err) {
-                    set({
-                        parseError: messageFor(err),
-                        entities: [],
-                        graph: EMPTY_GRAPH,
-                    })
-                }
+                set({ parsing: true, parseError: null })
+                setTimeout(() => {
+                    try {
+                        const entities = entitiesFromDocuments(documents)
+                        set({
+                            xml: documents[0] ?? "",
+                            entities,
+                            graph: buildGraph(entities),
+                            parseError: null,
+                            selectedEntityId: null,
+                            parsing: false,
+                        })
+                    } catch (err) {
+                        set({
+                            parseError: messageFor(err),
+                            entities: [],
+                            graph: EMPTY_GRAPH,
+                            parsing: false,
+                        })
+                    }
+                }, 0)
+            },
+
+            applyEntities: (entities) => {
+                set({ parsing: true, parseError: null })
+                setTimeout(() => {
+                    try {
+                        set({
+                            entities,
+                            graph: buildGraph(entities),
+                            parseError: null,
+                            selectedEntityId: null,
+                            parsing: false,
+                        })
+                    } catch (err) {
+                        set({
+                            parseError: messageFor(err),
+                            entities: [],
+                            graph: EMPTY_GRAPH,
+                            parsing: false,
+                        })
+                    }
+                }, 0)
             },
 
             select: (id) =>

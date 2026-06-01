@@ -2,6 +2,8 @@
 
 import { useMemo, useRef } from "react"
 import dynamic from "next/dynamic"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Loading03Icon } from "@hugeicons/core-free-icons"
 
 import { XmlEditor } from "@/components/editor/xml-editor"
 import { Sidebar } from "@/components/sidebar/sidebar"
@@ -12,6 +14,17 @@ const GraphCanvas = dynamic(
     () => import("@/components/graph/graph-canvas").then((m) => m.GraphCanvas),
     { ssr: false }
 )
+
+function ParsingScreen() {
+    return (
+        <main className="flex min-h-svh flex-col items-center justify-center gap-3 p-6 text-muted-foreground">
+            <div className="animate-spin">
+                <HugeiconsIcon icon={Loading03Icon} className="size-6" />
+            </div>
+            <p className="text-sm">Parsing document…</p>
+        </main>
+    )
+}
 
 export default function Page() {
     const { state } = useGraphContext()
@@ -26,6 +39,10 @@ export default function Page() {
         }),
         []
     )
+
+    if (state.parsing) {
+        return <ParsingScreen />
+    }
 
     if (!hasGraph) {
         return (

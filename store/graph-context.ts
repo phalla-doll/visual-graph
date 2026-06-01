@@ -18,6 +18,7 @@ export interface GraphState {
     selectedEntityId: string | null
     search: string
     parseError: string | null
+    parsing: boolean
     layoutDirection: LayoutDirection
     sidebarTab: SidebarTab
     summaries: Record<string, string>
@@ -28,6 +29,7 @@ export interface GraphActions {
     setXml(xml: string): void
     parse(): void
     parseDocuments(documents: string[]): void
+    applyEntities(entities: Entity[]): void
     select(id: string | null): void
     setSearch(q: string): void
     setLayoutDirection(direction: LayoutDirection): void

@@ -1,8 +1,13 @@
 "use client"
 
-import { useRef } from "react"
+import { useDeferredValue, useMemo, useRef } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { FolderOpenIcon, PlayIcon } from "@hugeicons/core-free-icons"
+import {
+    CheckmarkCircle02Icon,
+    FolderOpenIcon,
+    PlayIcon,
+} from "@hugeicons/core-free-icons"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,11 +19,48 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { validateEdmx } from "@/parser/validate"
 import { useGraphContext } from "@/store/graph-context"
+
+function formatBytes(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}
 
 export function XmlEditor() {
     const { state, actions } = useGraphContext()
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const deferredXml = useDeferredValue(state.xml)
+    const isValidating = deferredXml !== state.xml
+
+    const stats = useMemo(() => {
+        if (!state.xml) return null
+        const bytes = new Blob([state.xml]).size
+        const lines = state.xml.split("\n").length
+        return {
+            chars: state.xml.length,
+            lines,
+            size: formatBytes(bytes),
+        }
+    }, [state.xml])
+
+    const validation = useMemo(
+        () => (deferredXml.trim() ? validateEdmx(deferredXml) : null),
+        [deferredXml]
+    )
+
+    const canParse =
+        state.xml.trim().length > 0 &&
+        !isValidating &&
+        !state.parsing &&
+        validation?.ok === true
+
+    function onParseClick() {
+        if (validation?.ok) actions.applyEntities(validation.entities)
+        else actions.parse()
+    }
 
     function onUploadClick() {
         fileInputRef.current?.click()
@@ -28,11 +70,35 @@ export function XmlEditor() {
         const files = Array.from(e.target.files ?? [])
         e.target.value = ""
         if (files.length === 0) return
-        const texts = await Promise.all(files.map((f) => f.text()))
-        if (texts.length === 1) {
-            actions.setXml(texts[0])
+
+        const results = await Promise.all(
+            files.map(async (f) => ({
+                name: f.name,
+                text: await f.text(),
+            }))
+        )
+
+        const failed = results
+            .map((r) => ({ name: r.name, result: validateEdmx(r.text) }))
+            .filter((r) => !r.result.ok) as {
+            name: string
+            result: { ok: false; error: string }
+        }[]
+
+        if (failed.length > 0) {
+            const list = failed.map((f) => f.name).join(", ")
+            toast.error(`Invalid EDMX: ${list}`, {
+                description: failed[0].result.error,
+            })
+            return
+        }
+
+        if (results.length === 1) {
+            actions.setXml(results[0].text)
+            toast.success(`Loaded ${results[0].name}`)
         } else {
-            actions.parseDocuments(texts)
+            actions.parseDocuments(results.map((r) => r.text))
+            toast.success(`Parsed ${results.length} documents`)
         }
     }
 
@@ -52,13 +118,19 @@ export function XmlEditor() {
                     placeholder={
                         '<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">…'
                     }
-                    className="min-h-[280px] font-mono text-xs"
+                    className="max-h-[60vh] min-h-[280px] font-mono text-xs"
                     spellCheck={false}
                 />
-                {state.parseError && (
+                {validation && !validation.ok && !isValidating ? (
                     <p className="text-sm text-destructive">
-                        {state.parseError}
+                        {validation.error}
                     </p>
+                ) : (
+                    state.parseError && (
+                        <p className="text-sm text-destructive">
+                            {state.parseError}
+                        </p>
+                    )
                 )}
                 <input
                     ref={fileInputRef}
@@ -69,13 +141,42 @@ export function XmlEditor() {
                     hidden
                 />
             </CardContent>
-            <CardFooter className="gap-2">
-                <Button variant="outline" onClick={onUploadClick}>
-                    <HugeiconsIcon icon={FolderOpenIcon} /> Upload file(s)
-                </Button>
-                <Button onClick={actions.parse} disabled={!state.xml.trim()}>
-                    <HugeiconsIcon icon={PlayIcon} /> Parse
-                </Button>
+            <CardFooter className="justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+                    {stats ? (
+                        <>
+                            {validation?.ok && !isValidating && (
+                                <HugeiconsIcon
+                                    icon={CheckmarkCircle02Icon}
+                                    className="size-3.5 shrink-0 text-emerald-500"
+                                />
+                            )}
+                            <span className="truncate">
+                                {stats.size} · {stats.lines.toLocaleString()}{" "}
+                                lines · {stats.chars.toLocaleString()} chars
+                                {validation?.ok &&
+                                    !isValidating &&
+                                    ` · ${validation.entityCount} entities`}
+                                {isValidating && " · validating…"}
+                            </span>
+                        </>
+                    ) : (
+                        <span>Empty</span>
+                    )}
+                </span>
+                <div className="flex shrink-0 gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={onUploadClick}
+                        disabled={state.parsing}
+                    >
+                        <HugeiconsIcon icon={FolderOpenIcon} /> Upload file(s)
+                    </Button>
+                    <Button onClick={onParseClick} disabled={!canParse}>
+                        <HugeiconsIcon icon={PlayIcon} />{" "}
+                        {state.parsing ? "Parsing…" : "Parse"}
+                    </Button>
+                </div>
             </CardFooter>
         </Card>
     )
