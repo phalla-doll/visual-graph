@@ -48,6 +48,29 @@ export function EntityList() {
             .sort((a, b) => a.namespace.localeCompare(b.namespace))
     }, [state.entities, state.search])
 
+    const commonPrefix = useMemo(() => {
+        const real = groups
+            .map((g) => g.namespace)
+            .filter((n) => n !== NO_NAMESPACE)
+        if (real.length < 2) return ""
+        const split = real.map((n) => n.split("."))
+        const minLen = Math.min(...split.map((s) => s.length))
+        const shared: string[] = []
+        for (let i = 0; i < minLen; i++) {
+            const seg = split[0][i]
+            if (split.every((s) => s[i] === seg)) shared.push(seg)
+            else break
+        }
+        // Don't strip every segment — always keep at least the last segment visible.
+        while (
+            shared.length > 0 &&
+            split.some((s) => s.length === shared.length)
+        ) {
+            shared.pop()
+        }
+        return shared.join(".")
+    }, [groups])
+
     const isSearching = state.search.trim().length > 0
 
     if (groups.length === 0) {
@@ -70,8 +93,22 @@ export function EntityList() {
     return (
         <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:!block">
             <div className="flex flex-col gap-1 p-2">
+                {commonPrefix && (
+                    <div
+                        className="truncate px-1.5 pt-1 pb-0.5 font-mono text-[10px] text-muted-foreground/70"
+                        title={`Shared namespace prefix: ${commonPrefix}`}
+                    >
+                        {commonPrefix}.*
+                    </div>
+                )}
                 {groups.map(({ namespace, items }) => {
                     const open = isSearching || !collapsed.has(namespace)
+                    const label =
+                        commonPrefix &&
+                        namespace !== NO_NAMESPACE &&
+                        namespace.startsWith(commonPrefix + ".")
+                            ? namespace.slice(commonPrefix.length + 1)
+                            : namespace
                     return (
                         <Collapsible
                             key={namespace}
@@ -88,11 +125,8 @@ export function EntityList() {
                                     icon={ArrowRight01Icon}
                                     className="size-3 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90"
                                 />
-                                <span
-                                    dir="rtl"
-                                    className="min-w-0 flex-1 truncate text-left font-mono text-[10px] text-muted-foreground"
-                                >
-                                    <bdi>{namespace}</bdi>
+                                <span className="min-w-0 flex-1 truncate text-left font-mono text-[10px] text-muted-foreground">
+                                    {label}
                                 </span>
                                 <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
                                     {items.length}
