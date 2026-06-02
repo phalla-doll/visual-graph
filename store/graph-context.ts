@@ -2,11 +2,20 @@
 
 import { createContext, use } from "react"
 
-import type { LayoutDirection, SidebarTab } from "@/store/graph-store"
+import type {
+    LayoutDirection,
+    SidebarTab,
+    SqlDialect,
+} from "@/store/graph-store"
 import type { Entity } from "@/types/entity"
 import type { ParsedGraph } from "@/types/graph"
 
 export type SummaryStatus =
+    | { state: "idle" }
+    | { state: "loading" }
+    | { state: "error"; error: string }
+
+export type SqlStatus =
     | { state: "idle" }
     | { state: "loading" }
     | { state: "error"; error: string }
@@ -23,6 +32,10 @@ export interface GraphState {
     sidebarTab: SidebarTab
     summaries: Record<string, string>
     summaryStatus: Record<string, SummaryStatus>
+    sqlResults: Record<string, string>
+    sqlStatus: Record<string, SqlStatus>
+    sqlQuestion: Record<string, string>
+    sqlDialect: SqlDialect
     collapsedNodes: Record<string, boolean>
     nodeZ: Record<string, number>
     nodePositions: Record<string, { x: number; y: number }>
@@ -38,6 +51,9 @@ export interface GraphActions {
     setLayoutDirection(direction: LayoutDirection): void
     setSidebarTab(tab: SidebarTab): void
     requestSummary(entity: Entity): Promise<void>
+    requestSql(entity: Entity, question: string): Promise<void>
+    setSqlQuestion(id: string, question: string): void
+    setSqlDialect(dialect: SqlDialect): void
     toggleCollapsed(id: string): void
     raiseNode(id: string): void
     setNodePosition(id: string, position: { x: number; y: number }): void

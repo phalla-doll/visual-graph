@@ -6,6 +6,7 @@ import {
     ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 
+import { AISql } from "@/components/sidebar/ai-sql"
 import { AISummary } from "@/components/sidebar/ai-summary"
 import {
     InspectorProvider,
@@ -91,6 +92,11 @@ function Header() {
 function Summary() {
     const { entity } = useInspector()
     return <AISummary entity={entity} />
+}
+
+function Sql() {
+    const { entity } = useInspector()
+    return <AISql entity={entity} />
 }
 
 function Properties() {
@@ -260,6 +266,8 @@ export function EntityInspector() {
                     <EntityInspector.Header />
                     <EntityInspector.Summary />
                     <Separator />
+                    <EntityInspector.Sql />
+                    <Separator />
                     <EntityInspector.Properties />
                     <Separator />
                     <EntityInspector.Outgoing />
@@ -273,6 +281,7 @@ export function EntityInspector() {
 
 EntityInspector.Header = Header
 EntityInspector.Summary = Summary
+EntityInspector.Sql = Sql
 EntityInspector.Properties = Properties
 EntityInspector.Outgoing = Outgoing
 EntityInspector.Incoming = Incoming

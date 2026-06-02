@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware"
 import { EdmxParseError, extractEntities } from "@/parser/edmx-parser"
 import { buildGraph } from "@/parser/graph-builder"
 import { XmlParseError, parseXml } from "@/parser/xml-parser"
-import type { SummaryStatus } from "@/store/graph-context"
+import type { SqlStatus, SummaryStatus } from "@/store/graph-context"
 import type { Entity } from "@/types/entity"
 import type { ParsedGraph } from "@/types/graph"
 import { collectIncoming } from "@/utils/incoming-relationships"
@@ -15,6 +15,7 @@ const EMPTY_GRAPH: ParsedGraph = { nodes: [], edges: [] }
 // Held outside the store because AbortController isn't serializable and the
 // in-flight request only matters for the current session.
 let inflightSummary: { id: string; controller: AbortController } | null = null
+let inflightSql: { id: string; controller: AbortController } | null = null
 
 function isAbort(err: unknown): boolean {
     return err instanceof DOMException && err.name === "AbortError"
@@ -22,6 +23,7 @@ function isAbort(err: unknown): boolean {
 
 export type LayoutDirection = "LR" | "TB"
 export type SidebarTab = "entities" | "details"
+export type SqlDialect = "postgres" | "mysql" | "mssql" | "sqlite" | "ansi"
 
 export interface GraphStore {
     xml: string
@@ -35,6 +37,10 @@ export interface GraphStore {
     sidebarTab: SidebarTab
     summaries: Record<string, string>
     summaryStatus: Record<string, SummaryStatus>
+    sqlResults: Record<string, string>
+    sqlStatus: Record<string, SqlStatus>
+    sqlQuestion: Record<string, string>
+    sqlDialect: SqlDialect
     collapsedNodes: Record<string, boolean>
     nodeZ: Record<string, number>
     topZ: number
@@ -50,6 +56,9 @@ export interface GraphStore {
     setSidebarTab: (tab: SidebarTab) => void
     setSummary: (id: string, summary: string) => void
     requestSummary: (entity: Entity) => Promise<void>
+    requestSql: (entity: Entity, question: string) => Promise<void>
+    setSqlQuestion: (id: string, question: string) => void
+    setSqlDialect: (dialect: SqlDialect) => void
     toggleCollapsed: (id: string) => void
     raiseNode: (id: string) => void
     setNodePosition: (id: string, position: { x: number; y: number }) => void
@@ -91,6 +100,10 @@ export const useGraphStore = create<GraphStore>()(
             sidebarTab: "entities",
             summaries: {},
             summaryStatus: {},
+            sqlResults: {},
+            sqlStatus: {},
+            sqlQuestion: {},
+            sqlDialect: "postgres",
             collapsedNodes: {},
             nodeZ: {},
             topZ: 0,
@@ -188,10 +201,22 @@ export const useGraphStore = create<GraphStore>()(
                             summaryStatus = next
                         }
                     }
+                    let sqlStatus = state.sqlStatus
+                    if (inflightSql && inflightSql.id !== id) {
+                        const cancelledId = inflightSql.id
+                        inflightSql.controller.abort()
+                        inflightSql = null
+                        if (sqlStatus[cancelledId]?.state === "loading") {
+                            const next = { ...sqlStatus }
+                            delete next[cancelledId]
+                            sqlStatus = next
+                        }
+                    }
                     return {
                         selectedEntityId: id,
                         sidebarTab: id ? "details" : state.sidebarTab,
                         summaryStatus,
+                        sqlStatus,
                     }
                 }),
 
@@ -284,6 +309,106 @@ export const useGraphStore = create<GraphStore>()(
                 }
             },
 
+            requestSql: async (entity, question) => {
+                const trimmed = question.trim()
+                const id = entity.id
+                if (!trimmed) return
+                if (inflightSql && inflightSql.id !== id) {
+                    inflightSql.controller.abort()
+                }
+                const controller = new AbortController()
+                inflightSql = { id, controller }
+                set((state) => ({
+                    sqlStatus: {
+                        ...state.sqlStatus,
+                        [id]: { state: "loading" },
+                    },
+                }))
+                const setError = (error: string) =>
+                    set((state) => ({
+                        sqlStatus: {
+                            ...state.sqlStatus,
+                            [id]: { state: "error", error },
+                        },
+                    }))
+                try {
+                    const allEntities = get().entities
+                    const byShort = new Map<string, Entity>()
+                    for (const e of allEntities) byShort.set(e.name, e)
+                    const neighborMap = new Map<string, Entity>()
+                    for (const rel of entity.relationships) {
+                        const target = byShort.get(rel.target)
+                        if (target && target.id !== entity.id)
+                            neighborMap.set(target.id, target)
+                    }
+                    const incomingFull = collectIncoming(entity, allEntities)
+                    for (const ref of incomingFull) {
+                        if (ref.fromEntity.id !== entity.id)
+                            neighborMap.set(ref.fromEntity.id, ref.fromEntity)
+                    }
+                    const neighbors = Array.from(neighborMap.values())
+                    const incoming = incomingFull.map((r) => ({
+                        fromName: r.fromEntity.name,
+                        name: r.name,
+                        cardinality: r.cardinality,
+                    }))
+                    const res = await fetch("/api/sql", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            entity,
+                            neighbors,
+                            incoming,
+                            question: trimmed,
+                            dialect: get().sqlDialect,
+                        }),
+                        signal: controller.signal,
+                    })
+                    const data = (await res.json().catch(() => null)) as {
+                        sql?: string
+                        error?: string
+                    } | null
+                    if (controller.signal.aborted) return
+                    if (!res.ok) {
+                        setError(
+                            data?.error ??
+                                `Request failed (HTTP ${res.status}).`
+                        )
+                        return
+                    }
+                    if (!data?.sql) {
+                        setError("No SQL returned.")
+                        return
+                    }
+                    set((state) => ({
+                        sqlResults: {
+                            ...state.sqlResults,
+                            [id]: data.sql as string,
+                        },
+                        sqlStatus: {
+                            ...state.sqlStatus,
+                            [id]: { state: "idle" },
+                        },
+                    }))
+                } catch (err) {
+                    if (isAbort(err) || controller.signal.aborted) return
+                    setError(
+                        err instanceof Error ? err.message : "Request failed."
+                    )
+                } finally {
+                    if (inflightSql?.controller === controller) {
+                        inflightSql = null
+                    }
+                }
+            },
+
+            setSqlQuestion: (id, question) =>
+                set((state) => ({
+                    sqlQuestion: { ...state.sqlQuestion, [id]: question },
+                })),
+
+            setSqlDialect: (dialect) => set({ sqlDialect: dialect }),
+
             toggleCollapsed: (id) =>
                 set((state) => {
                     const next = { ...state.collapsedNodes }
@@ -330,6 +455,9 @@ export const useGraphStore = create<GraphStore>()(
                     sidebarTab: "entities",
                     summaries: {},
                     summaryStatus: {},
+                    sqlResults: {},
+                    sqlStatus: {},
+                    sqlQuestion: {},
                     collapsedNodes: {},
                     nodeZ: {},
                     topZ: 0,
@@ -338,7 +466,7 @@ export const useGraphStore = create<GraphStore>()(
         }),
         {
             name: "visual-graph",
-            version: 4,
+            version: 5,
             storage: createJSONStorage(() =>
                 typeof window === "undefined"
                     ? (undefined as unknown as Storage)
@@ -350,6 +478,7 @@ export const useGraphStore = create<GraphStore>()(
                 layoutDirection: state.layoutDirection,
                 sidebarTab: state.sidebarTab,
                 summaries: state.summaries,
+                sqlDialect: state.sqlDialect,
                 collapsedNodes: state.collapsedNodes,
                 nodeZ: state.nodeZ,
                 topZ: state.topZ,
@@ -362,6 +491,7 @@ export const useGraphStore = create<GraphStore>()(
                     layoutDirection?: LayoutDirection
                     sidebarTab?: SidebarTab
                     summaries?: Record<string, string>
+                    sqlDialect?: SqlDialect
                     collapsedNodes?: Record<string, boolean>
                     nodeZ?: Record<string, number>
                     topZ?: number
@@ -374,6 +504,7 @@ export const useGraphStore = create<GraphStore>()(
                         layoutDirection: p.layoutDirection ?? "LR",
                         sidebarTab: p.sidebarTab ?? "entities",
                         summaries: p.summaries ?? {},
+                        sqlDialect: "postgres",
                         collapsedNodes: {},
                         nodeZ: {},
                         topZ: 0,
@@ -383,6 +514,7 @@ export const useGraphStore = create<GraphStore>()(
                 if (version < 3) {
                     return {
                         ...p,
+                        sqlDialect: p.sqlDialect ?? "postgres",
                         collapsedNodes: {},
                         nodeZ: {},
                         topZ: 0,
@@ -390,7 +522,14 @@ export const useGraphStore = create<GraphStore>()(
                     }
                 }
                 if (version < 4) {
-                    return { ...p, nodePositions: {} }
+                    return {
+                        ...p,
+                        sqlDialect: p.sqlDialect ?? "postgres",
+                        nodePositions: {},
+                    }
+                }
+                if (version < 5) {
+                    return { ...p, sqlDialect: "postgres" }
                 }
                 return persisted
             },
