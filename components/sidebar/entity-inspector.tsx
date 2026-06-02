@@ -109,37 +109,37 @@ function Properties() {
             ) : (
                 <div className="divide-y overflow-hidden rounded-md border text-xs">
                     {entity.properties.map((p) => (
-                    <div
-                        key={p.name}
-                        className="flex items-center gap-2 px-2.5 py-1.5"
-                    >
-                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                            {p.isKey && (
-                                <Badge
-                                    variant="secondary"
-                                    className="h-4 shrink-0 px-1 text-[10px]"
+                        <div
+                            key={p.name}
+                            className="flex items-center gap-2 px-2.5 py-1.5"
+                        >
+                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                {p.isKey && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="h-4 shrink-0 px-1 text-[10px]"
+                                    >
+                                        PK
+                                    </Badge>
+                                )}
+                                <span
+                                    title={p.name}
+                                    className={`truncate ${p.isKey ? "font-medium" : ""}`}
                                 >
-                                    PK
-                                </Badge>
-                            )}
+                                    {p.name}
+                                </span>
+                            </div>
                             <span
-                                title={p.name}
-                                className={`truncate ${p.isKey ? "font-medium" : ""}`}
+                                title={`${p.type}${p.nullable ? "?" : ""}`}
+                                className={cn(
+                                    "max-w-[45%] shrink-0 truncate text-right font-mono text-[10px]",
+                                    typeColorClass(p.type)
+                                )}
                             >
-                                {p.name}
+                                {p.type.replace(/^Edm\./, "")}
+                                {p.nullable ? "?" : ""}
                             </span>
                         </div>
-                        <span
-                            title={`${p.type}${p.nullable ? "?" : ""}`}
-                            className={cn(
-                                "max-w-[45%] shrink-0 truncate text-right font-mono text-[10px]",
-                                typeColorClass(p.type)
-                            )}
-                        >
-                            {p.type.replace(/^Edm\./, "")}
-                            {p.nullable ? "?" : ""}
-                        </span>
-                    </div>
                     ))}
                 </div>
             )}

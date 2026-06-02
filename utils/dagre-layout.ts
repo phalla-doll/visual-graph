@@ -99,6 +99,8 @@ export function layoutGraph(
                 x: positioned.x - width / 2,
                 y: positioned.y - height / 2,
             },
+            width,
+            height,
             data: {
                 label: node.label,
                 properties: node.properties,

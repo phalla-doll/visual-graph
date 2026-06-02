@@ -141,7 +141,24 @@ function CanvasInner({ panRef }: GraphCanvasProps) {
                 >
                     <Background gap={20} />
                     <Controls />
-                    {!isDragging && <MiniMap pannable zoomable />}
+                    {!isDragging && (
+                        <MiniMap
+                            pannable
+                            zoomable
+                            nodeColor={
+                                colorMode === "dark" ? "#9ca3af" : "#374151"
+                            }
+                            nodeStrokeColor={
+                                colorMode === "dark" ? "#e5e7eb" : "#111827"
+                            }
+                            nodeStrokeWidth={40}
+                            maskColor={
+                                colorMode === "dark"
+                                    ? "rgba(0, 0, 0, 0.6)"
+                                    : "rgba(240, 240, 240, 0.6)"
+                            }
+                        />
+                    )}
                     <RelationshipMarkers />
                 </ReactFlow>
             </div>
