@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { streamNvidiaCompletion } from "@/lib/nvidia-stream"
 import type { Entity, EntityProperty, Relationship } from "@/types/entity"
-
-const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-const MODEL = "openai/gpt-oss-120b"
 
 interface IncomingRef {
     fromName: string
@@ -190,116 +188,24 @@ export async function POST(request: Request) {
     }
 
     const prompt = buildPrompt(body)
-
-    let upstream: Response
-    try {
-        upstream = await fetch(NVIDIA_URL, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-                Accept: "text/event-stream",
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: [{ role: "user", content: prompt }],
-                // gpt-oss-120b is a reasoning model — it spends tokens on
-                // chain-of-thought before producing `content`. Need headroom or it hits
-                // `finish_reason: "length"` with `content: null`.
-                max_tokens: 8192,
-                temperature: 0.6,
-                top_p: 0.95,
-                // Stream so response headers arrive immediately. For large entities
-                // (many properties), non-streaming requests can exceed undici's 300s
-                // headersTimeout while the model is still reasoning, which surfaces
-                // to the user as a 5-minute hang ending in 502.
-                stream: true,
-            }),
-        })
-    } catch (err) {
-        const message = err instanceof Error ? err.message : "Network error"
+    const result = await streamNvidiaCompletion({ prompt, apiKey })
+    if (!result.ok) {
         return NextResponse.json(
-            { error: `Upstream request failed: ${message}` },
-            { status: 502 }
+            { error: result.error },
+            { status: result.status }
         )
     }
 
-    if (!upstream.ok) {
-        const text = await upstream.text().catch(() => "")
-        return NextResponse.json(
-            {
-                error: `Upstream returned HTTP ${upstream.status}: ${text.slice(0, 400)}`,
-            },
-            { status: 502 }
-        )
-    }
-
-    if (!upstream.body) {
-        return NextResponse.json(
-            { error: "Upstream returned an empty stream." },
-            { status: 502 }
-        )
-    }
-
-    let contentText = ""
-    let reasoningText = ""
-    let finishReason: string | undefined
-    try {
-        const reader = upstream.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ""
-        while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buffer += decoder.decode(value, { stream: true })
-            let nl: number
-            while ((nl = buffer.indexOf("\n")) !== -1) {
-                const rawLine = buffer.slice(0, nl)
-                buffer = buffer.slice(nl + 1)
-                const line = rawLine.trim()
-                if (!line.startsWith("data:")) continue
-                const payload = line.slice(5).trim()
-                if (!payload || payload === "[DONE]") continue
-                try {
-                    const parsed = JSON.parse(payload) as {
-                        choices?: {
-                            finish_reason?: string | null
-                            delta?: {
-                                content?: string | null
-                                reasoning_content?: string | null
-                            }
-                        }[]
-                    }
-                    const choice = parsed.choices?.[0]
-                    if (choice?.delta?.content)
-                        contentText += choice.delta.content
-                    if (choice?.delta?.reasoning_content)
-                        reasoningText += choice.delta.reasoning_content
-                    if (choice?.finish_reason)
-                        finishReason = choice.finish_reason
-                } catch {
-                    // Skip malformed SSE frames — keep reading the rest.
-                }
-            }
-        }
-    } catch (err) {
-        const message = err instanceof Error ? err.message : "Stream error"
-        return NextResponse.json(
-            { error: `Upstream stream failed: ${message}` },
-            { status: 502 }
-        )
-    }
-
-    const summary = (contentText || reasoningText).trim()
+    const summary = (result.content || result.reasoning).trim()
     if (!summary) {
         return NextResponse.json(
             {
-                error: `Upstream did not return a summary (finish_reason=${finishReason ?? "unknown"}).`,
+                error: `Upstream did not return a summary (finish_reason=${result.finishReason ?? "unknown"}).`,
             },
             { status: 502 }
         )
     }
-    if (finishReason === "length") {
+    if (result.finishReason === "length") {
         return NextResponse.json(
             {
                 error: "Model ran out of token budget before completing the summary. Try again.",

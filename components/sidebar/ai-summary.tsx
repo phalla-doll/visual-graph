@@ -1,7 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Loading03Icon, SparklesIcon } from "@hugeicons/core-free-icons"
+import {
+    Copy01Icon,
+    Loading03Icon,
+    SparklesIcon,
+} from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { useGraphContext } from "@/store/graph-context"
@@ -17,6 +22,18 @@ export function AISummary({ entity }: AISummaryProps) {
     const status = state.summaryStatus[entity.id] ?? { state: "idle" as const }
     const isLoading = status.state === "loading"
     const error = status.state === "error" ? status.error : null
+    const [copied, setCopied] = useState(false)
+
+    async function copy() {
+        if (!summary) return
+        try {
+            await navigator.clipboard.writeText(summary)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+        } catch {
+            // Clipboard unavailable — silently no-op.
+        }
+    }
 
     return (
         <div className="flex flex-col gap-2">
@@ -27,7 +44,7 @@ export function AISummary({ entity }: AISummaryProps) {
                 </h3>
                 <Button
                     size="xs"
-                    variant={summary ? "ghost" : "default"}
+                    variant="outline"
                     onClick={() => actions.requestSummary(entity)}
                     disabled={isLoading}
                 >
@@ -47,9 +64,18 @@ export function AISummary({ entity }: AISummaryProps) {
                 </Button>
             </div>
             {summary && (
-                <p className="rounded-md border bg-muted/40 px-2.5 py-2 text-xs leading-relaxed">
-                    {summary}
-                </p>
+                <div className="flex flex-col gap-1.5 rounded-md border bg-muted/40 p-2">
+                    <p className="text-xs leading-relaxed">{summary}</p>
+                    <div className="flex justify-end">
+                        <Button size="xs" variant="ghost" onClick={copy}>
+                            <HugeiconsIcon
+                                icon={Copy01Icon}
+                                className="size-3"
+                            />
+                            {copied ? "Copied" : "Copy"}
+                        </Button>
+                    </div>
+                </div>
             )}
             {error && <p className="text-xs text-destructive">{error}</p>}
             {!summary && !error && !isLoading && (
