@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { validateEdmx } from "@/parser/validate"
+import { EXAMPLE_EDMX } from "@/lib/example-edmx"
 import { useGraphContext } from "@/store/graph-context"
 
 function formatBytes(bytes: number) {
@@ -64,6 +65,11 @@ export function XmlEditor() {
 
     function onUploadClick() {
         fileInputRef.current?.click()
+    }
+
+    function onTryExample() {
+        actions.setXml(EXAMPLE_EDMX)
+        toast.success("Loaded Marvel Cinematic Universe sample")
     }
 
     async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -142,28 +148,32 @@ export function XmlEditor() {
                 />
             </CardContent>
             <CardFooter className="justify-between gap-3">
-                <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-                    {stats ? (
-                        <>
-                            {validation?.ok && !isValidating && (
-                                <HugeiconsIcon
-                                    icon={CheckmarkCircle02Icon}
-                                    className="size-3.5 shrink-0 text-emerald-500"
-                                />
-                            )}
-                            <span className="truncate">
-                                {stats.size} · {stats.lines.toLocaleString()}{" "}
-                                lines · {stats.chars.toLocaleString()} chars
-                                {validation?.ok &&
-                                    !isValidating &&
-                                    ` · ${validation.entityCount} entities`}
-                                {isValidating && " · validating…"}
-                            </span>
-                        </>
-                    ) : (
-                        <span>Empty</span>
-                    )}
-                </span>
+                {stats ? (
+                    <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+                        {validation?.ok && !isValidating && (
+                            <HugeiconsIcon
+                                icon={CheckmarkCircle02Icon}
+                                className="size-3.5 shrink-0 text-emerald-500"
+                            />
+                        )}
+                        <span className="truncate">
+                            {stats.size} · {stats.lines.toLocaleString()} lines
+                            · {stats.chars.toLocaleString()} chars
+                            {validation?.ok &&
+                                !isValidating &&
+                                ` · ${validation.entityCount} entities`}
+                            {isValidating && " · validating…"}
+                        </span>
+                    </span>
+                ) : (
+                    <Button
+                        variant="link"
+                        onClick={onTryExample}
+                        disabled={state.parsing}
+                    >
+                        Try example data
+                    </Button>
+                )}
                 <div className="flex shrink-0 gap-2">
                     <Button
                         variant="outline"
